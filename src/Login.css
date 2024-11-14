@@ -5,7 +5,7 @@
     display: flex;
     justify-content: center;
     align-items: center;
-    background-color: #000;  /* Black background */
+    background-color:black;  /* Black background */
     position: relative;
     overflow: hidden;  /* Hide overflowing animation */
 }

@@ -201,7 +201,7 @@
   }
   /* Styling for the Forgot Password and Sign-Up links */
 .signup-links {
-    display: box;
+    display: flex;
     text-align: right;
     justify-content: space-between;
     padding-bottom: 15px;
