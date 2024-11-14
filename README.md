@@ -6,12 +6,12 @@ ArchiTexture is a platform designed to automate the process of architectural des
 Introduction
 ArchiTexture simplifies architectural design by translating textual descriptions into structured 2D and 3D layouts. This tool serves architects, real estate professionals, game developers, and even non-experts, making design faster, accessible, and more precise.
 
-
+npm install
 pip install -r requirements.txt
 
 
 npm install react-router-dom react-icons
-
+npm start
 
 License
 Distributed under the MIT License. See LICENSE for more information.
