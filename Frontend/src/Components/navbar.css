@@ -1,0 +1,24 @@
+/* Navbar.css */
+.navbar {
+    background-color: rgb(20, 18, 18); /* Dark background */
+    color: rgb(7, 207, 243);
+    padding: 20px 0px;
+    text-align: center;
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    z-index: 1000;
+  }
+  
+  .navbar h1 {
+    margin: 0;
+    font-size: 40px;
+    font-weight:bolder;
+  }
+  
+  /* Ensure the navbar doesn't overlap content */
+  body {
+    margin-top: 60px; /* Adjust depending on the navbar height */
+  }
+  

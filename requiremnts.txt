@@ -1,0 +1,10 @@
+python -m django startproject backend
+pip install pipenv
+pip install django
+pipenv install djangorestframework
+npm install axios
+python manage.py runserver
+pip install mysqlclient
+python manage.py makemigrations
+python manage.py migrate
+ pip install django-cors-headers
