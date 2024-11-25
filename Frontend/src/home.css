@@ -1,0 +1,220 @@
+
+.chatbot-container {
+  display: flex;
+  height: 91.9vh;
+  font-family: Arial, sans-serif;
+  background-color: #333;
+}
+.welcome{
+  display: flex;
+  flex-direction: column;
+  color: #181e24b4;
+
+}
+.welcome1{
+  display: flex;
+  justify-content: left;
+  text-align: left;
+  flex-direction: row;
+  color: white;
+}
+.color-change span {
+  display: inline-block; /* Treat each character as an individual block */
+  animation: color-cycle 2s infinite; /* Define color animation */
+}
+
+/* Keyframes for cycling through colors */
+@keyframes color-cycle {
+  0% { color: rgb(98, 180, 231); }
+  25% { color: rgb(31, 193, 207); }
+  50% { color: rgb(75, 189, 175); }
+  75% { color: rgb(51, 188, 147); }
+  100% { color: rgb(27, 174, 108); }
+}
+
+/* Add delay for each character */
+.color-change span:nth-child(1) { animation-delay: 0s; }
+.color-change span:nth-child(2) { animation-delay: 0.2s; }
+.color-change span:nth-child(3) { animation-delay: 0.4s; }
+.color-change span:nth-child(4) { animation-delay: 0.6s; }
+.color-change span:nth-child(5) { animation-delay: 0.8s; }
+/* Add more delays for additional characters */
+/* Top bar with username and Architexture text */
+.top-bar {
+  position: absolute;
+  top: 0;
+  right: 0;
+  width: 100%; /* Stretch to full width */
+  display: flex; /* Flex layout for alignment */
+  justify-content: space-between; /* Space between center text and username */
+  align-items: center; /* Vertically center content */
+  padding: 10px;
+  background-color: #333;
+}
+
+.architexture-container {
+  display: flex; /* Ensure ARCHITEXTURE and standard 3.5 are in one line */
+  align-items: center; /* Vertically align text */
+  margin: auto; /* Center horizontally */
+}
+
+.architexture-text {
+  font-weight: bold;
+  font-family: 'Franklin Gothic Medium', 'Arial Narrow', Arial, sans-serif;
+  font-size: 20px;
+  color: white;
+  margin: 0;
+}
+
+.standard-text {
+  font-family: 'Arial', sans-serif;
+  font-size: 13px;
+  color: white;
+  margin-left: 2px; /* Small space between ARCHITEXTURE and standard 3.5 */
+  margin-top: 8%;
+}
+
+.username {
+  font-weight: bold;
+  font-family: 'Franklin Gothic Medium', 'Arial Narrow', Arial, sans-serif;
+  color: white;
+  border: 1px solid white;
+  padding: 3px 10px;
+  border-radius: 5px;
+}
+/* Sidebar */
+.sidebar {
+  position: relative;
+  width: 200px;
+  background-color: rgba(23, 20, 20, 0.429);
+  color: white;
+  display: flex;
+  flex-direction: column;
+  padding: 10px;
+  margin-top: -4%;
+}
+
+/* Sidebar button styling */
+.new-chat-button {
+  margin-left: 50%;
+  background-color: #333;
+  color: white;
+  margin-top: 5%;
+  border:none;
+  border-radius: 10px;
+}
+
+.new-chat-button:hover {
+  background-color: #567ca5; /* Hover effect for button */
+}
+
+.new-chat-button:focus {
+  outline: none; /* Remove focus outline */
+}
+
+/* Optional: Add some space and style for the icon */
+.new-chat-button svg {
+  margin-right: 8px;
+}
+
+
+.history {
+  flex-grow: 1;
+  overflow-y: auto;
+  overflow-x:auto ;
+  margin-top: 10px;
+}
+
+.history-item {
+  padding: 8px;
+  margin: 5px 0;
+  background-color: black;
+  border-radius: 4px;
+  cursor: pointer;
+}
+
+/* Main chat area */
+.chat-area {
+  flex-grow: 1;
+  display: flex;
+  flex-direction: column;
+  background-color: #333;
+  padding: 20px;
+  min-width: 60%; /* Ensure chat area doesn't shrink too much */
+  overflow-wrap: break-word; /* Break text at word boundaries */
+  
+}
+
+.messages {
+  flex-grow: 1;
+  display: flex;
+  align-items: center;
+  justify-content: left;
+
+}
+
+.user-prompt {
+  display: flex;
+  align-items: left;
+  justify-content: left;
+  font-size: 18px;
+  color: white;
+}
+
+.user-icon {
+  font-size: 24px;
+  margin-right: 10px;
+}
+
+.prompt-text {
+  font-size: 16px;
+  font-weight: bold;
+  word-wrap: break-word; /* Ensure line breaks */
+  max-width: 100ch; /* Limit the width to around 60 characters (approximately 60 words) */
+  white-space: pre-wrap; /* Respect line breaks within the text */
+  color: white;
+}
+
+/* Input area at the bottom */
+.input-area {
+  display: flex;
+  align-items: center;
+  padding: 10px;
+  border-top: 1px solid #333;
+  background-color: #333;
+}
+.mode-button {
+  margin-right: 10px;
+  padding: 8px 12px;
+  border: none;
+  background-color: #0c0d0f;
+  color: rgb(9, 3, 3);
+  cursor: pointer;
+  border-radius: 10px;
+  min-height: 100%;
+  width: 5%;
+  font-size: 20px;
+  color: white;
+}
+
+.mode-button:hover {
+  background-color: #567ca5;
+}
+
+/* Input box - ensure it grows with content and wraps text */
+.input-box {
+  flex-grow: 1;
+  padding: 10px;
+  border: 1px solid #D3D3D3;
+  border-radius: 4px;
+  margin-right: 10px;
+  width: 80%; /* Allow input box to expand */
+  word-wrap: break-word;
+  resize: none; /* Disable manual resizing */
+  overflow-x: auto;
+  white-space: pre-wrap; /* Ensures line breaks when text exceeds width */
+  min-height: 30px; /* To make sure input box is always visible */
+  background-color: #333;
+  color: white;
+  border-radius: 10px;
+}
