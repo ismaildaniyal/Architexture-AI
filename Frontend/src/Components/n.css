@@ -1,0 +1,53 @@
+/* Base Navbar Styling */
+.navbar {
+    /* background-color:black; */
+    padding: 15px 0; /* Adjusted padding for better spacing */
+    text-align: center;
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    z-index: 1000; /* Keep above other content */
+
+  }
+  
+  /* Navbar Title */
+  .navbar h1 {
+    margin: 0;
+    font-size: 2.5rem; /* Large font size for desktop */
+    font-weight: bold;
+    text-transform: uppercase; /* Optional: All caps styling */
+    text-align: center;
+    color: rgb(251, 251, 251);
+  }
+  
+  /* Body Padding to Prevent Navbar Overlap */
+  body {
+    margin-top: 0px; /* Matches the navbar height */
+  }
+  
+  /* Responsive Adjustments */
+  @media (max-width: 992px) {
+    .navbar h1 {
+      font-size: 2rem; /* Adjust font size for tablets */
+    }
+  }
+  
+  @media (max-width: 768px) {
+    .navbar h1 {
+      font-size: 1.5rem; /* Smaller font size for mobile devices */
+    }
+    .navbar {
+      padding: 14px 0; /* Reduced padding for smaller screens */
+    }
+  }
+  
+  @media (max-width: 576px) {
+    .navbar h1 {
+      font-size: 1.2rem; /* Compact font size for small phones */
+    }
+    .navbar {
+      padding: 8px 0; /* Minimized padding for very small screens */
+    }
+  }
+  

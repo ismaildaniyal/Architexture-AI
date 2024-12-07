@@ -1,10 +1,12 @@
 import React from "react";
-
-function LoginLinks({ onSignupClick }) {
+import { Link } from 'react-router-dom';
+function LoginLinks({ onSignupClick, onForgotPasswordClick }) {
   return (
     <div className="login-links">
-      <a href="/#" className="forgot-password">Forgot Password?</a>
-      <a href="/Sign-in" className="sign-up" onClick={onSignupClick}>Sign Up</a>
+      <Link href="/#" className="forgot-password" onClick={onForgotPasswordClick}>
+        Forgot Password?
+      </Link>
+      {/* <Link to="/Sign-in" className="sign-up" onClick={onSignupClick}>Sign Up</Link> */}
     </div>
   );
 }

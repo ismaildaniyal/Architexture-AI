@@ -1,0 +1,973 @@
+.chatbot-container {
+  display:  grid;
+  min-height: 90vh;
+  font-family: Arial, sans-serif;
+  background-color: #0B1124;
+  margin-top: 3.9%;
+}
+.welcome{
+  display: flex;
+  flex-direction: column;
+  color: #818ea0;
+  margin-top: 10%;
+  margin-left: 13%;
+  max-width: 80%;
+}
+.welcome1{
+  display: flex;
+  justify-content: left;
+  text-align: left;
+  flex-direction: row;
+  color: white;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.color-change span {
+  display: inline-block; /* Treat each character as an individual block */
+  animation: color-cycle 2s infinite; /* Define color animation */
+}
+
+/* Keyframes for cycling through colors */
+@keyframes color-cycle {
+  0% { color: #62B4E7; }
+  25% { color: #1FC1CF; }
+  50% { color: #7a9dcc; }
+  75% { color: #0898e5; }
+  100% { color: #058399; }
+}
+
+/* Add delay for each character */
+.color-change span:nth-child(1) { animation-delay: 0s; }
+.color-change span:nth-child(2) { animation-delay: 0.2s; }
+.color-change span:nth-child(3) { animation-delay: 0.4s; }
+.color-change span:nth-child(4) { animation-delay: 0.6s; }
+.color-change span:nth-child(5) { animation-delay: 0.8s; }
+/* Add more delays for additional characters */
+/* Top bar with username and Architexture text */
+.top-bar {
+  position: absolute;
+  top: 0;
+  right: 0;
+  width: 100%; /* Stretch to full width */
+  display: flex; /* Flex layout for alignment */
+  justify-content: space-between;/* Space between center text and username*/
+  align-items: center; /* Vertically center content */
+  padding: 10px;
+  background-color: #0B1124;
+}
+
+.architexture-container {
+  position: relative;
+  display: flex; /* Ensure ARCHITEXTURE and standard 3.5 are in one line */
+  align-items: center; /* Vertically align text */
+  margin: auto; /* Center horizontally */
+  margin-left: 29%;
+}
+
+.architexture-text {
+  font-weight: bold;
+  font-family: 'Franklin Gothic Medium', 'Arial Narrow', Arial, sans-serif;
+  font-size: 35px;
+  color: #FFFFFF;
+  margin: 4;
+  margin-top: 7.5%;
+}
+
+.username {
+  display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 30px; /* Adjust size */
+    height: 30px; /* Make it a square */
+    border-radius: 50%; /* Make it circular */
+    background-color: rgb(69, 69, 177); /* Background color */
+    color: white; /* Text color */
+    font-weight: bold; /* Bold text */
+    font-size: 10px; /* Adjust font size */
+    margin-left: 5px; /* Space between icon and circle */
+}
+/* Sidebar */
+.sidebar {
+  margin-left: 1%;
+  position: relative;
+  width: 275px;
+  height: 99%;
+  background-color: #111C33;
+  color: white;
+  display: flex;
+  flex-direction: column;
+  padding: 4px;
+  margin-top: -1%;
+  border-radius: 16px;
+  border-right: 1px solid white;
+  box-shadow: 1px 0 10px rgba(255, 255, 255, 0.5);
+}
+.sidebar h2{
+  margin-top: 40px;
+  text-align: center;
+  
+}
+.sidebar span{
+  border-bottom: 2px solid white;
+  width: 100%; /* Limit width */
+  margin: 0 auto; /* Center the span */
+  display: block; /* Make it block to respect width */
+  overflow: hidden; /* Prevent overflow */
+}
+/* Sidebar button styling */
+.new-chat-button {
+  align-self: flex-end;
+  margin-left: 55%;
+  background: linear-gradient(135deg, #6a6af0, #8e72f1);
+  color: #fff;
+  margin-top: 5%;
+  border: none;
+  border-radius: 20px;
+  width: 100px;
+  padding: 7px;
+  cursor: pointer;
+  font-size: 14px;
+}
+
+.new-chat-button:hover {
+  background-color: #567ca5; /* Hover effect for button */
+}
+
+.new-chat-button:focus {
+  outline: none; /* Remove focus outline */
+}
+
+/* Optional: Add some space and style for the icon */
+.new-chat-button svg {
+  margin-right: 8px;
+}
+
+
+.history {
+  height: calc(37% - 100px);
+  flex-grow:1;
+  overflow-y: auto;
+  overflow-x:auto ;
+  margin-top: 10px;
+  margin-bottom: 120px;
+}
+
+.history-item {
+  padding: 8px;
+  margin: 5px 0;
+  background-color: #0B1124;
+  border-radius: 4px;
+  cursor: pointer;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.delete-prompt-btn {
+  background: none;
+  border: none;
+  color: #ff6347;
+  cursor: pointer;
+  padding: 4px;
+  opacity: 0.7;
+  transition: opacity 0.2s ease;
+  display: flex;
+  align-items: center;
+}
+
+.delete-prompt-btn:hover {
+  opacity: 1;
+}
+
+.light-mode .delete-prompt-btn {
+  color: #ff4444;
+}
+
+/* Main chat area */
+.chat-area {
+  flex-grow: 1;
+  display: flex;
+  flex-direction: column;
+  background-color: #0B1124;
+  padding: 20px;
+  min-width: 60%; /* Ensure chat area doesn't shrink too much */
+  overflow-wrap: break-word; /* Break text at word boundaries */
+ 
+  margin-top: 3%;
+}
+
+
+
+.user-prompt {
+  display: flex;
+  align-items: left;
+  justify-content: left;
+  font-size: 18px;
+  color: white;
+}
+
+.user-icon {
+  font-size: 24px;
+  margin-right: 10px;
+}
+
+.prompt-text {
+  font-size: 16px;
+  font-weight: bold;
+  word-wrap: break-word; /* Ensure line breaks */
+  max-width: 100ch; /* Limit the width to around 60 characters (approximately 60 words) */
+  white-space: pre-wrap; /* Respect line breaks within the text */
+  color: white;
+}
+
+/* Input area at the bottom */
+.input-area {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  padding: 10px;
+  border-top: 1px solid #57595f;
+  background-color: #0B1124;
+}
+.mode-button {
+  margin-right: 10px;
+  padding: 4px 8px;
+  border: none;
+  background: linear-gradient(135deg, #6a6af0, #8e72f1);
+  color:#fff ;
+  /* background-color:  #1A2540;
+  color: rgb(9, 3, 3); */
+  cursor: pointer;
+  border-radius: 25px;
+  min-height: 35px;
+  width: 9%;
+  font-size: 15px;
+  margin-bottom: 15px;
+  transition: box-shadow 0.3s ease, background-color 0.3s ease; /* Smooth shadow effect */
+  min-width: 80px; /* Set minimum width */
+}
+
+.mode-button:hover {
+  box-shadow: 0 0 5px 2px rgba(255, 255, 255, 0.7); /* White shadow effect */
+}
+
+/* Input box - ensure it grows with content and wraps text */
+.input-box {
+  flex-grow: 0;
+  padding: 10px;
+  border: 1px solid #1A2540;
+  border-radius: 25px;
+  width: 60%; /* Allow input box to expand */
+  word-wrap: break-word;
+  resize: none; /* Disable manual resizing */
+  overflow-x: auto;
+  white-space: pre-wrap; /* Ensures line breaks when text exceeds width */
+  min-height: 30px; /* To make sure input box is always visible */
+  background-color: #111C33;
+  color: white;
+  margin-right: 1%;
+  margin-bottom: 15px;
+  transition: box-shadow 0.3s ease, border-color 0.3s ease; /* Smooth transition for shadow effect */
+  cursor: pointer;
+}
+.input-box:hover {
+  border-color: rgba(255, 255, 255, 0.7); /* Slightly brighten border on hover */
+  box-shadow: 0 0 5px 1px rgba(255, 255, 255, 0.7); /* White shadow effect */
+}
+
+.theme-toggle {
+  background: none;
+  border: none;
+  color: white;
+  font-size: 20px;
+  cursor: pointer;
+}
+
+/* Dropdown styles */
+/* Center the contents of the dropdown */
+.dropdown {
+  position: absolute;
+  top: 60px;
+  right: 0;
+  background-color: #15223d;
+  color: rgb(250, 248, 248);
+  border-radius: 20px;
+  box-shadow: 0 4px 6px rgba(46, 45, 45, 0.1);
+  z-index: 1000;
+  min-width: 150px; /* Set minimum width */
+  padding: 10px 15px; /* Adjust padding */
+  display: flex;
+  flex-direction: column;
+  align-items: stretch; /* Change to stretch to fill width */
+}
+
+/* Update dropdown item to better handle username */
+.dropdown-item {
+  display: flex; /* Make it flex container */
+  align-items: center; /* Center vertically */
+  justify-content: flex-start; /* Align to start */
+  margin-bottom: 10px;
+  font-size: 14px;
+  border-bottom: 1px solid #f2efef;
+  padding: 5px 0; /* Adjust padding */
+  font-weight: bold;
+  width: 100%; /* Take full width */
+  white-space: nowrap; /* Prevent username from wrapping */
+  overflow: hidden; /* Hide overflow */
+  text-overflow: ellipsis; /* Add ellipsis for long usernames */
+}
+
+/* Update logout button styling */
+.logout-button {
+  color: rgb(236, 101, 101);
+  border: none;
+  cursor: pointer;
+  margin-top: 10px;
+  text-align: center;
+  width: 100%; /* Take full width */
+  padding: 5px 0;
+  background: none;
+}
+
+/* Update username-bar for better alignment */
+.username-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  background-color: #1c2a48;
+  border-radius: 25px;
+  padding: 5px 10px; /* Adjust padding */
+  color: white;
+  width: auto;
+  margin-right: 4%;
+  margin-left: auto;
+  position: relative;
+  box-shadow: 3px 0 10px rgba(255, 255, 255, 0.5);
+  min-width: 120px; /* Set minimum width */
+}
+.username-bar button{
+  margin-left: 6px;
+}
+.username {
+  font-weight: bold;
+  font-size: 10px;
+  cursor: pointer;
+  margin-right: 6px;
+}
+@media (max-width:1023px) {
+  .sidebar{
+    display: none;
+  }
+}
+/* Larger screens (1440px and above) */
+@media (max-width: 1440px) And (min-width: 1280px) {
+  .sidebar{
+    height: 100%;
+  }
+  .history{
+    height: 43%;
+  }
+ .architexture-container{
+  margin-left: 35%;
+ }
+ .architexture-text{
+  margin-top: 8%;
+ }
+ .username-bar{
+  width: 10%;
+ }
+}
+@media (min-width: 1280px) and (min-height: 949px) {
+  .sidebar{
+    height: 100%;
+  }
+  .history{
+    height: 52%;
+  }
+ .architexture-container{
+  margin-left: 35%;
+ }
+ .architexture-text{
+  margin-top: 8%;
+ }
+ .username-bar{
+  width: 10%;
+ }
+}
+@media (min-width: 1024px) and (max-width: 1279px) {
+  .sidebar {
+      width: 275px; /* Wider sidebar */
+     
+  }
+
+  .chat-area {
+  }
+
+  .input-box {
+      width: 70%; /* Wider input */
+  }
+.username-bar{
+  width: 10%;
+  margin-right: 1%;
+  
+}
+.architexture-text{
+  margin-top: 9%;
+  margin-left: 6%;
+}
+}
+
+/* Common styles */
+.chatbot-container {
+  display: flex;
+  height: 91.9vh;
+  font-family: Arial, sans-serif;
+}
+
+/* Light mode styles */
+.light-mode .architexture-text{
+  color: #0B1124 ;
+}
+.light-mode {
+  background: linear-gradient(to bottom, #f7f8fa, #e8efff); /* Light gradient background */
+}
+
+.light-mode .top-bar {
+  background-color: #f5f5f5;
+  
+  background: linear-gradient(to bottom,#e8efff, #f7f8fa); /* Light gradient background */;
+}
+
+.light-mode .sidebar {
+  background-color: #ffffff;
+  color: black;
+  
+  border-right: 0.5px solid black; /* White border on the right side */
+  
+  box-shadow: 1px 0 10px rgba(28, 28, 28, 0.359); /* Subtle white shadow */
+}
+.light-mode .sidebar span{
+  border-bottom: 1px solid black;
+}
+.light-mode .username-bar {
+  background-color: #ffffff;
+  color: #4e5d73;
+}
+.light-mode .input-area {
+  background-color: #f5f5f5;
+  background: linear-gradient(to bottom, #e8efff, #e8efff); /* Light gradient background */;
+  border: none;
+  
+  border-top: 1px solid #57595f;
+}
+.light-mode .welcome{
+  color: #3536377d;
+}
+.light-mode .welcome1{
+  color: black;
+}
+.light-mode .input-box {
+  background-color:#fafbfc;
+  color: black;
+}
+
+.light-mode .chat-area{
+  background: linear-gradient(to bottom, #f7f8fa, #e8efff); /* Light gradient background */;
+  background-color: #f5f5f5;
+}
+
+.light-mode .dropdown{
+  background-color:  #ffffff;
+}
+.light-mode .dropdown-item{
+  color:  black;
+  
+  border-bottom: 1px solid black;
+}
+.light-mode .mode-button{
+  background-color: rgb(69, 69, 177);
+}
+.light-mode .prompt-text{
+  color: #3536377d;
+}
+.light-mode .history-item{
+  background-color:  #ffffff;
+  color: #0B1124;
+}
+.light-mode .new-chat-button{
+  background-color: rgb(69, 69, 177);
+}
+
+
+.messages {
+  flex-grow: 1;
+  display: flex;
+  flex-direction: column; /* Arrange messages vertically */
+  overflow-y: auto; /* Make messages scrollable */
+  padding-right: 15px; /* Add padding for right alignment */
+  margin-top: 40px;
+}
+
+.message {
+  display: flex;
+  flex-direction: column; /* Separate user and response vertically */
+  margin-bottom: 15px;
+}
+.user-message {
+  align-self: flex-end; /* Align to the right */
+  display: flex;
+  align-items: center;
+  margin-bottom: 5px;
+  padding: 10px;
+  border-radius: 12px;
+  max-width: 50%;
+  word-wrap: break-word;
+  white-space: pre-wrap; /* Ensures text wraps to the next line */
+  word-wrap: break-word; /* Breaks long words to fit within the container */
+  word-break: break-word; /* Additional support for word breaking */
+}
+
+.response {
+  align-self: flex-start; /* Align to the left */
+  display: flex;
+  align-items: center;
+  margin-bottom: 5px;
+  padding: 10px;
+  border-radius: 12px;
+  max-width: 70%;
+  word-wrap: break-word;
+}
+
+.user-icon {
+  margin-right: 10px;
+  font-size: 20px;
+}
+
+.response-icon {
+  margin-right: 10px;
+  font-size: 20px;
+}
+
+.prompt-text {
+  color: white;
+}
+
+.response-text {
+  color: white;
+}
+
+.messages::-webkit-scrollbar {
+  width: 8px;
+}
+
+.messages::-webkit-scrollbar-thumb {
+  background-color: rgba(255, 255, 255, 0.2);
+  border-radius: 10px;
+}
+
+.messages::-webkit-scrollbar-thumb:hover {
+  background-color: rgba(255, 255, 255, 0.4);
+}
+
+.messages::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.light-mode .prompt-text{
+  color: #0B1124;
+}
+.light-mode .response-text{
+  color: #0B1124;
+}
+
+/* Add these responsive styles */
+@media screen and (max-width: 1023px) {
+  .chatbot-container{
+    height: 100vh;
+  }
+    .sidebar {
+        position: fixed;
+        top: 0;
+        left: 0;
+        height: 100vh;
+        width: 280px;
+        z-index: 1000;
+        transition: transform 0.3s ease;
+    }
+    .history{
+      height: 66%;
+    }
+    .sidebar-overlay {
+        display: none;
+        position: fixed;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background: rgba(0, 0, 0, 0.5);
+        z-index: 999;
+    }
+
+    .sidebar-overlay.show {
+        display: block;
+    }
+
+    .hamburger-icon {
+        display: block;
+        margin-right: 10px;
+    }
+    
+    .architexture-text {
+        font-size: 38px;
+        margin-top: 15%;
+        margin-left: -43%;
+    }
+
+    .username-bar {
+        width: auto;
+        margin-right: 5px;
+        margin-top: 6%;
+    }
+
+    .input-area {
+        padding: 10px;
+    }
+
+    .input-box {
+        width: 70%;
+    }
+
+    .mode-button {
+        width: auto;
+        min-width: 60px;
+    }
+    .welcome{
+      margin-top: 50%;
+      margin-left: 3%;
+    }
+    .chat-area{
+      margin-top: 10%;
+    }
+}
+
+@media screen and (max-width: 768px) {
+    .architexture-text {
+        font-size: 20px;
+        margin-left: 0;
+    }
+
+    .architexture-container {
+        margin-left: 15%;
+    }
+
+    .input-box {
+        width: 60%;
+    }
+
+    .mode-button {
+        min-width: 50px;
+        font-size: 14px;
+    }
+}
+@media (min-width: 1024px) and (min-height: 1366px) {
+  .chatbot-container{
+    height: 100vh;
+  }
+  .sidebar{
+    margin-top: 2%;
+    height: 96vh;
+  }
+  .history{
+    height: 66%;
+  }
+  .architexture-text{
+    font-size: 45px;
+  }
+  .welcome{
+    margin-top: 60%;
+    margin-left: 3%;
+  }
+  .chat-area{
+    margin-top: 15%;
+  }
+}
+@media screen and (max-width: 480px) {
+ 
+    .architexture-text {
+        font-size: 20px;
+    }
+
+    .architexture-container {
+        margin-left: 8%;
+    }
+
+    .input-box {
+        width: 60%;
+    }
+
+    .mode-button {
+        min-width: 65px;
+        font-size: 12px;
+        margin-right: 0.5%;
+    }
+
+    .username-bar {
+        margin-right: 10px;
+    }
+    .input-area{
+      margin-bottom: 1%;
+    }
+    .chatbot-container{
+      min-height: 100vh;
+    }
+    .sidebar{
+      margin-top: 2%;
+      height: 97vh;
+      width: 200px;
+    }
+    .history{
+      height: 33vh;
+    }
+    .welcome{
+      margin-top: 20%;
+      margin-left: 2%;
+      font-size: 15px;
+    }
+    .chat-area{
+      margin-top: 14%;
+    }
+}
+
+/* Add/modify these styles */
+
+/* Hide hamburger icon by default for larger screens */
+.hamburger-icon {
+    display: none; /* Hidden by default for screens > 1024px */
+}
+
+/* Show hamburger icon for screens <= 1023px */
+@media screen and (max-width: 1023px) {
+    .hamburger-icon {
+        display: block; /* Show hamburger icon */
+        background: none;
+        border: none;
+        cursor: pointer;
+        color: inherit;
+        margin-right: 10px;
+    }
+
+    .sidebar {
+        display: none; /* Hide sidebar by default on mobile */
+    }
+
+    .sidebar.show {
+        display: block; /* Show sidebar when active */
+    }
+}
+
+/* Ensure hamburger stays hidden for larger screens */
+@media screen and (min-width: 1024px) {
+    .hamburger-icon {
+        display: none;
+    }
+    
+  .new-chat-button {
+    width: 120px;
+    font-size: 15px;
+  }
+}
+
+
+/* Update media queries for welcome message */
+@media screen and (max-width: 1023px) {
+  .welcome {
+    margin-top: 50%;
+    margin-left: 5%;
+    max-width: 90%;
+  }
+}
+
+@media screen and (max-width: 768px) {
+  .welcome {
+    margin-top: 40%;
+    margin-left: 3%;
+    max-width: 94%;
+  }
+}
+
+@media (min-width: 1024px) and (min-height: 1366px) {
+  .welcome {
+    margin-top: 60%;
+    margin-left: 3%;
+    max-width: 94%;
+  }
+}
+
+@media screen and (max-width: 480px) {
+  .welcome {
+    margin-top: 40%;
+    margin-left: 2%;
+    max-width: 96%;
+  }
+  
+  .welcome1 {
+    font-size: 0.9em; /* Slightly reduce font size on very small screens */
+  }
+}
+
+/* Add this for better text scaling on different screen sizes */
+@media screen and (min-width: 1440px) {
+  .welcome {
+    margin-top: 8%;
+    max-width: 70%;
+  }
+  
+  .welcome1 {
+    font-size: 1.2em; /* Slightly larger text on bigger screens */
+  }
+}
+
+/* Adjust buttons for different screen sizes */
+@media screen and (max-width: 1023px) {
+  .mode-button {
+    min-width: 70px;
+    font-size: 14px;
+    padding: 3px 6px;
+  }
+  
+  .new-chat-button {
+    width: 90px;
+    font-size: 13px;
+  }
+}
+
+@media screen and (max-width: 768px) {
+  .mode-button {
+    min-width: 60px;
+    font-size: 13px;
+    padding: 2px 5px;
+    margin-right: 5px;
+  }
+  
+  .new-chat-button {
+    width: 80px;
+    font-size: 12px;
+  }
+}
+
+@media screen and (max-width: 480px) {
+  .mode-button {
+    min-width: 50px;
+    font-size: 12px;
+    padding: 2px 4px;
+    margin-right: 3px;
+    min-height: 30px;
+  }
+  
+  .new-chat-button {
+    width: 70px;
+    font-size: 11px;
+    padding: 5px;
+  }
+}
+
+/* For larger screens */
+@media screen and (min-width: 1440px) {
+  .mode-button {
+    min-width: 100px;
+    font-size: 16px;
+    padding: 5px 10px;
+  }
+  
+  .new-chat-button {
+    width: 120px;
+    font-size: 15px;
+  }
+}
+
+/* Update media queries for new-chat-button */
+@media screen and (max-width: 1023px) {
+  .new-chat-button {
+    margin-right: 8px;
+  }
+}
+
+@media screen and (max-width: 768px) {
+  .new-chat-button {
+    margin-right: 6px;
+  }
+}
+
+@media screen and (max-width: 480px) {
+  .new-chat-button {
+    margin-right: 0px;
+    
+    margin-left: 62%;
+  }
+}
+
+/* Add styles for the bottom card */
+.sidebar-bottom-card {
+  display: flex;
+  position: absolute;
+  justify-content: center;
+  bottom: 0px;
+  left: 0px;
+  right: 0px;
+  border-radius: 12px;
+  padding: 15px;
+  margin: 0 10px;
+  height: 220px; /* Fixed height */
+  max-width: calc(100% - 20px);
+}
+
+/* Media queries for responsive bottom card */
+@media screen and (max-width: 1023px) {
+  .sidebar-bottom-card {
+    height: 200px;
+    padding: 12px;
+  }
+}
+
+@media screen and (max-width: 768px) {
+  .sidebar-bottom-card {
+    height: 190px;
+    padding: 10px;
+  }
+}
+
+@media screen and (max-width: 480px) {
+  .sidebar-bottom-card {
+    height: 180px;
+    padding: 8px;
+  }
+}
+
+@media (min-width: 1440px) {
+  .sidebar-bottom-card {
+    height: 240px;
+    padding: 18px;
+  }
+}
+
+/* Add specific media query for screens between 820px and 1024px */
+@media screen and (min-width: 820px) and (max-width: 1023px) {
+    .welcome {
+        margin-top: 25% !important;
+        margin-left: 3%;
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        align-items: flex-start;
+        height: 50vh;
+    }
+    
+    .chat-area {
+        display: flex;
+        flex-direction: column;
+        justify-content: space-between;
+        height: calc(100vh - 100px);
+        margin-top: 10%;
+    }
+}

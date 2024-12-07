@@ -34,6 +34,26 @@ REST_FRAMEWORK = {
     ],
 }
 # Application definition
+# settings.py
+
+
+
+EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
+EMAIL_HOST = 'smtp.gmail.com'
+EMAIL_PORT = 587
+EMAIL_USE_TLS = True
+EMAIL_HOST_USER = 'architexturea@gmail.com'  # Your email
+EMAIL_HOST_PASSWORD = 'xywz rlfg mskc kvfr'  # Your email password
+
+
+
+# In settings.py, make sure you have caching configured:
+CACHES = {
+    'default': {
+        'BACKEND': 'django.core.cache.backends.locmem.LocMemCache',  # Simple in-memory cache
+        'TIMEOUT': 60,  # Timeout for the cache (in seconds)
+    }
+}
 
 INSTALLED_APPS = [
     'django.contrib.admin',

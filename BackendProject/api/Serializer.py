@@ -48,3 +48,55 @@ class UserSerializer(serializers.ModelSerializer):
 class LoginSerializer(serializers.Serializer):
     email = serializers.EmailField()
     password = serializers.CharField(write_only=True)
+
+
+
+class validate_Email_Serializer(serializers.Serializer):
+    email = serializers.EmailField()
+
+    def validate_email(self, value):
+        """
+        Check if the email exists in the database.
+        """
+        value = value.strip()
+        # Log the email for debugging
+        print(f"Validating email: {value}")
+        
+        try:
+            from .models import User
+            # Use a case-insensitive query
+            user = User.objects.get(email__iexact=value)
+            print(f"Email Data: {user}")
+        except User.DoesNotExist:
+
+            raise serializers.ValidationError("Account does not exist. Please sign up.")
+        
+        return value
+
+
+class StorePasswordSerializer(serializers.Serializer):
+    email = serializers.EmailField()
+    password = serializers.CharField(write_only=True, min_length=2)
+
+    def validate(self, data):
+        email = data.get("email")
+        password = data.get("password")
+
+        # Check if the user exists
+        try:
+            User.objects.get(email=email)
+        except User.DoesNotExist:
+            raise serializers.ValidationError("User with this email does not exist.")
+
+        return data
+
+    def save(self):
+        email = self.validated_data["email"]
+        password = self.validated_data["password"]
+
+        # Get the user object and update the password
+        user = User.objects.get(email=email)
+        user.password = hashlib.sha256(password.encode('utf-8')).hexdigest() # Hash the password
+        user.save()
+
+        return user

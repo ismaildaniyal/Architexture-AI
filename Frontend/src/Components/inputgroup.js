@@ -1,6 +1,6 @@
 import React from "react";
 
-function InputGroup({  type, placeholder, value, onChange }) {
+function InputGroup({  type, placeholder, value, onChange, onBlur }) {
   return (
     <div className="input-group">
       
@@ -9,7 +9,7 @@ function InputGroup({  type, placeholder, value, onChange }) {
         placeholder={placeholder}
         value={value}
         onChange={onChange}
-        required
+        onBlur={onBlur}
       />
     </div>
   );
