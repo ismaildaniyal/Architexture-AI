@@ -7,7 +7,7 @@ import ProCard from "../Components/card";
 
 function ChatbotUI() {
     const [input, setInput] = useState('');
-    const [history, setHistory] = useState({});
+    const [history, setHistory] = useState({ 1: [] });
     const [currentPromptId, setCurrentPromptId] = useState(1);
     const [showWelcome, setShowWelcome] = useState(true);
     const [username, setUsername] = useState('');
@@ -63,28 +63,107 @@ alert("You have been logged out.");
             document.removeEventListener('click', handleClickOutside);
         };
     }, []);
+    const [loading, setLoading] = useState(false);
 
-    const handleSendPrompt = (mode) => {
+    const handleSendPrompt = async (mode) => {
         if (input.trim()) {
+            setLoading(true); // Start loading
+            setShowWelcome(false); // Hide the welcome screen
             const newPrompt = { text: input, mode };
-            setHistory((prevHistory) => ({
-                ...prevHistory,
-                [selectedPromptId]: [...(prevHistory[selectedPromptId] || []), newPrompt],
-            }));
-            setShowWelcome(false);
-            setInput('');
+    
+            // Add the input message with a loading state to history
+             // Add the prompt to history with a loading placeholder
+        setHistory((prevHistory) => ({
+            ...prevHistory,
+            [selectedPromptId]: [...(prevHistory[selectedPromptId] || []), { ...newPrompt, loading: true }],
+        }));
+        setInput("")
+            try {
+                const response = await fetch('http://127.0.0.1:8000/api/process-houseplan/', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ input, mode }),
+                });
+    
+                let newResponse = {}; // To store the response
+    
+                if (response.ok) {
+                    const data = await response.json();
+    
+                    if (data.predictions && data.predictions.length > 0) {
+                        // Handle valid predictions
+                        newResponse = {
+                            predictions: data.predictions, // Bounding boxes
+                            success: true,
+                            text: input,
+                        };
+                    } else {
+                        // Handle invalid predictions
+                        newResponse = { 
+                            message: 'Invalid response from the API', 
+                            success: false, 
+                            text: input 
+                        };
+                    }
+                } else {
+                    const errorData = await response.json();
+                    newResponse = {
+                        message: errorData.error || 'An error occurred.',
+                        success: false,
+                        text: input,
+                    };
+                }
+    
+                // Update history with the response
+                setHistory((prevHistory) => ({
+                    ...prevHistory,
+                    [selectedPromptId]: prevHistory[selectedPromptId].map((prompt) =>
+                        prompt.text === input ? newResponse : prompt
+                    ),
+                }));
+            } catch (error) {
+                console.error('Error:', error);
+                const newResponse = {
+                    message: 'An error occurred. Please try again.',
+                    success: false,
+                    text: input,
+                };
+    
+                // Update history with the error message
+                setHistory((prevHistory) => ({
+                    ...prevHistory,
+                    [selectedPromptId]: prevHistory[selectedPromptId].map((prompt) =>
+                        prompt.text === input ? newResponse : prompt
+                    ),
+                }));
+            } finally {
+                setLoading(false); // Stop loading
+            }
         }
     };
+    
+    
+    
+    
+    
+    
+    
 
     const handleNewChat = () => {
         if (history[selectedPromptId] && history[selectedPromptId].length > 0) {
             const newPromptId = currentPromptId + 1;
             setCurrentPromptId(newPromptId);
             setSelectedPromptId(newPromptId);
+            
+            // Add new chat at the beginning (top of stack)
             setHistory((prevHistory) => ({
-                ...prevHistory,
                 [newPromptId]: [],
+                ...prevHistory,
             }));
+            // Only show welcome for the new empty chat
+            setShowWelcome(true);
         } else {
             alert("Please add a prompt before starting a new chat.");
         }
@@ -92,6 +171,8 @@ alert("You have been logged out.");
 
     const handleSelectPrompt = (promptId) => {
         setSelectedPromptId(promptId);
+        // Show welcome message only if the selected chat has no history
+        setShowWelcome(history[promptId]?.length === 0);
     };
 
     const handleDeletePrompt = (promptId, e) => {
@@ -229,21 +310,30 @@ alert("You have been logged out.");
                         New Chat
                     </button>
                     <div className="history">
-                        {Object.keys(history).map((promptId) => (
-                            <div
-                                key={promptId}
-                                className={`history-item ${selectedPromptId === Number(promptId) ? 'selected' : ''}`}
-                                onClick={() => handleSelectPrompt(Number(promptId))}
-                            >
-                                <span>Prompt {promptId}</span>
-                                <button 
-                                    className="delete-prompt-btn"
-                                    onClick={(e) => handleDeletePrompt(Number(promptId), e)}
+                        {Object.keys(history)
+                            .sort((a, b) => b - a) // Sort in descending order to show newest first
+                            .map((promptId) => (
+                                <div
+                                    key={promptId}
+                                    className={`history-item ${selectedPromptId === Number(promptId) ? 'selected' : ''}`}
+                                    style={{
+                                        backgroundColor: selectedPromptId === Number(promptId) ? '#6a6af0' : 'transparent',
+                                        color: selectedPromptId === Number(promptId) ? 'white' : 'inherit'
+                                    }}
+                                    onClick={() => handleSelectPrompt(Number(promptId))}
                                 >
-                                    <FaTrash size={14} />
-                                </button>
-                            </div>
-                        ))}
+                                    <span>Prompt {promptId}</span>
+                                    <button 
+                                        className="delete-prompt-btn"
+                                        onClick={(e) => handleDeletePrompt(Number(promptId), e)}
+                                        style={{
+                                            color: selectedPromptId === Number(promptId) ? 'white' : '#ff6347'
+                                        }}
+                                    >
+                                        <FaTrash size={14} />
+                                    </button>
+                                </div>
+                            ))}
                     </div>
                     <div className='sidebar-bottom-card' >
                         <ProCard />
@@ -253,7 +343,7 @@ alert("You have been logged out.");
 
                 <div className="chat-area" style={responsiveStyles.chatArea}>
                     <div className="messages">
-                        {showWelcome && (
+                        {(showWelcome && (!history[selectedPromptId] || history[selectedPromptId].length === 0)) && (
                             <div className="welcome" style={responsiveStyles.welcome}>
                                 <div className="welcome1">
                                     <h1>Hello,</h1>
@@ -271,36 +361,99 @@ alert("You have been logged out.");
                         {history[selectedPromptId] && history[selectedPromptId].map((prompt, index) => (
                             <div key={index} className="message">
                                 <div className="user-message">
-                                    <span className="user-icon">👤</span>
+                                    <span className="user-icon">🙂</span>
                                     <span className="prompt-text">{prompt.text}</span>
                                 </div>
-                                <div className="response">
-                                    <span className="response-icon">🤖</span>
-                                    <span className="response-text">Hello, thank you!</span>
-                                </div>
+                        {/* Container for chat content and spinner overlay */}
+                        <div className="response">
+                                <span className="response-icon">Architexture AI</span>
+
+                                {/* Check if the request is loading */}
+                                {prompt.loading ? (
+                                    <div
+                                        style={{
+                                            position: "relative",
+                                            width: "300px",
+                                            height: "300px",
+                                            border: "1px solid black",
+                                            marginTop: "10px",
+                                            background: "white",
+                                        }}
+                                        className="blurred-container"  // Apply blur effect only to this container
+                                    >
+                                        {/* Spinner Overlay */}
+                                        <div className="spinner-overlay">
+                                            <div className="spinner"></div>
+                                        </div>
+                                    </div>
+                                ) : prompt.success ? (
+                                    <div className="svg-container">
+                                        <svg
+                                            width="300"
+                                            height="300"
+                                            viewBox="0 0 500 500"
+                                            style={{
+                                                border: "1px solid black",
+                                                background: "white",
+                                            }}
+                                        >
+                                            {prompt.predictions.map((box, index) => {
+                                                const { 0: b_x, 1: b_y, 2: a_x, 3: a_y } = box;
+                                                const width = a_x - b_x;
+                                                const height = a_y - b_y;
+                                                return (
+                                                    <rect
+                                                        key={index}
+                                                        x={b_x}
+                                                        y={b_y}
+                                                        width={width}
+                                                        height={height}
+                                                        fill="none"
+                                                        stroke="#6a6af0"
+                                                        strokeWidth="4"
+                                                    />
+                                                );
+                                            })}
+                                        </svg>
+                                    </div>
+                                    
+                                ) : (
+                                    <span className="response-text">
+                                        {prompt.message || 'Error generating predictions'}
+                                    </span>
+                                )}
+                            </div>
+                            
+
                             </div>
                         ))}
                         <div ref={messagesEndRef}></div>
                     </div>
 
                     <div className="input-area">
-                        <textarea
-                            className="input-box"
-                            value={input}
-                            onChange={(e) => setInput(e.target.value)}
-                            onKeyDown={(e) => {
-                                if (e.key === 'Enter' && e.shiftKey) {
-                                    setInput(input + '\n');
-                                } else if (e.key === 'Enter') {
-                                    handleSendPrompt("2D");
-                                    e.preventDefault();
-                                }
-                            }}
-                            placeholder="Type your message here..."
-                            rows={1}
-                        />
-                        <button className="mode-button" onClick={() => handleSendPrompt("2D")}>2D</button>
-                        <button className="mode-button" onClick={() => handleSendPrompt("3D")}>3D</button>
+                    <textarea
+    className="input-box"
+    value={input}
+    onChange={(e) => setInput(e.target.value)}
+    onKeyDown={(e) => {
+        if (e.key === 'Enter' && e.shiftKey) {
+            setInput(input + '\n');
+        } else if (e.key === 'Enter') {
+            handleSendPrompt("2D");
+            e.preventDefault();
+        }
+    }}
+    placeholder="Type your message here..."
+    rows={1}
+    disabled={loading} // Disable input while loading
+/>
+<button className="mode-button" onClick={() => handleSendPrompt("2D")} disabled={loading}>
+    2D
+</button>
+<button className="mode-button" onClick={() => handleSendPrompt("3D")} disabled={loading}>
+    3D
+</button>
+
                     </div>
                 </div>
             </div>
