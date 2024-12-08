@@ -15,7 +15,7 @@ axios.defaults.xsrfCookieName = "csrftoken";
 axios.defaults.xsrfHeaderName = "X-CSRFToken";
 axios.defaults.withCredentials = true;
 
-function Signin() {
+function Signup() {
   const [username, setUsername] = useState(""); // State for username
   const [email, setEmail] = useState(""); // State for email
   const [password, setPassword] = useState(""); // State for password
@@ -151,14 +151,10 @@ function Signin() {
                 <div className="spinner"></div>
                 </div>}
               {errorMessage && <p className="error-message">{errorMessage}</p>}
-
-       
-
-          {/* <SocialButtons /> */}
         </div>
       </div>
     </div>
   );
 }
 
-export default Signin;
+export default Signup;
