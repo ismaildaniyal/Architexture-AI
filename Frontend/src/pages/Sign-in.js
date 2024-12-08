@@ -126,7 +126,7 @@ const password_form= ()=>{
   
 
   
-  // Handle form submission
+  // Handle form submission Login form
   const handleSubmit = async (e) => {
     e.preventDefault();
    
@@ -157,7 +157,7 @@ const password_form= ()=>{
     }
   };
 
-  // Handle Forgot Password form submission
+  // Handle Forgot Password form submission 
   const handleForgotPasswordSubmit = async (e) => {
     e.preventDefault();
   
@@ -351,6 +351,7 @@ const password_form= ()=>{
             <>
               <h2>Welcome To Architexture</h2>
               <h4>Login Here</h4>
+              {/* Login form submit */}
               <form onSubmit={handleSubmit}>
                 
                 <InputGroup
@@ -385,7 +386,7 @@ const password_form= ()=>{
           </div>
               </form>
             
-              {/* <SocialLogin /> */}
+              
             </>
           ) : isResetPassword ? (
             <>
