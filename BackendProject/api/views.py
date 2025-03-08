@@ -3,8 +3,8 @@ import random
 from urllib import request
 from django.http import HttpResponseRedirect, JsonResponse
 from django.urls import reverse
-from .models import User, UserAuth
-from .Serializer import UserSerializer, LoginSerializer,validate_Email_Serializer,StorePasswordSerializer
+from .models import Chat, ChatPrompt, User, UserAuth
+from .Serializer import ChatPromptSerializer, UserSerializer, LoginSerializer,validate_Email_Serializer,StorePasswordSerializer
 from rest_framework.generics import ListAPIView
 from rest_framework.response import Response
 from rest_framework.views import APIView
@@ -26,10 +26,96 @@ from django.utils.http import urlsafe_base64_decode
 from .models import UserAuth, User
 from django.db import IntegrityError
 from django.utils.http import urlsafe_base64_encode, urlsafe_base64_decode
+import numpy as np
+import torch
+from Model_Implimentaion.test import validate_and_enhance_house_plan  # Import functions from file1
+from Model_Implimentaion.model_implement import  GraphTransformerMLPModel  # Import models from file2
+import os
+import bcrypt
+from django.utils import timezone
 class UserList(ListAPIView):
     queryset = User.objects.all()
     serializer_class = UserSerializer
 
+
+
+
+def process_input(user_input):
+    if "code" in user_input.lower():
+        return False
+    else:
+        return True
+#House Floor Plan API
+class HousePlanAPI(APIView):
+    def post(self, request):
+        user_input = request.data.get("input")
+        prompt_id = request.data.get("promptId")
+        email = request.data.get("email")
+
+        # Check required fields
+        missing_fields = [field for field in ["input", "promptId", "email"] if not request.data.get(field)]
+        if missing_fields:
+            return Response({"error": f"Missing required fields: {', '.join(missing_fields)}"}, status=status.HTTP_400_BAD_REQUEST)
+
+        if not process_input(user_input):
+            return Response({"error": "I'm not able to write any code."}, status=status.HTTP_400_BAD_REQUEST)
+
+        try:
+            user = User.objects.get(email=email)
+
+            # Fetch or create chat
+            # chat, created = Chat.objects.get_or_create(chat_id=prompt_id, user=user, defaults={"created_at": timezone.now()})
+            # chat_created_at = chat.created_at if not created else timezone.now()
+            chat, created = Chat.objects.get_or_create(
+            chat_id=prompt_id, user=user, defaults={"created_at": timezone.now()}
+            )
+            chat_created_at = chat.created_at if not created else timezone.now()
+            # Validate house plan
+            validation_result = validate_and_enhance_house_plan(user_input)
+            if not validation_result["is_valid"]:
+                ChatPrompt.objects.create(chat=chat, prompt_text=user_input, output_text=validation_result["reason"], boundary_box=[], created_at=chat_created_at)
+                return Response({"error": validation_result["reason"]}, status=status.HTTP_400_BAD_REQUEST)
+            # Load adjacency and room matrices
+            print("Danial")
+            adj = np.load("C:/Users/SMART TECH/Documents/FYP/BackendProject/Model_Implimentaion/adjacency_matrix.npy", allow_pickle=True)
+            vec = np.load("C:/Users/SMART TECH/Documents/FYP/BackendProject/Model_Implimentaion/room_matrix.npy", allow_pickle=True)
+            print("Ajd",adj)
+            print("Adjacency matrix shape:", adj.shape)
+            print("Feature matrix shape:", vec.shape)
+            # Prepare matrices for the model
+            adj_matrix = torch.tensor(np.array(adj, dtype=np.float32))
+            feature_matrix = torch.tensor(np.array(vec, dtype=np.float32))
+
+            # Load the model
+            model = GraphTransformerMLPModel(
+                feature_dim=33,          # 19 (node features) + 14 (from A)
+                hidden_dim=64,
+                num_layers=3,
+                num_heads=4,
+                mlp_hidden_features=512
+            )
+            model.load_state_dict(torch.load(r"C:\Users\SMART TECH\Desktop\New folder (2)\Architexture-AI\BackendProject\Model_Implimentaion\GraphTransformer.pth", weights_only=True), strict=False)
+
+            model.eval()
+
+            # Perform prediction
+            with torch.no_grad():
+                predictions = model(feature_matrix, adj_matrix)
+            # Convert predictions to a JSON-compatible format
+            predictions_list = predictions.numpy().tolist()
+             # Save successful response
+            ChatPrompt.objects.create(chat=chat, prompt_text=user_input, output_text="Success", boundary_box=predictions_list, created_at=chat_created_at)
+
+            return Response({"predictions": predictions_list}, status=status.HTTP_200_OK)
+
+        except User.DoesNotExist:
+            return Response({"error": "User not found"}, status=status.HTTP_404_NOT_FOUND)
+
+        except Exception as e:
+            error_message = str(e)
+            if 'chat' in locals():
+                ChatPrompt.objects.create(chat=chat, prompt_text=user_input, output_text=error_message, boundary_box=[], created_at=chat_created_at)
+            return Response({"error": error_message}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
 # class SignupView(APIView):
 #     def post(self, request):
@@ -71,41 +157,54 @@ class UserList(ListAPIView):
     
 
 
+@method_decorator(csrf_exempt, name='dispatch')
 class LoginView(APIView):
     def post(self, request):
-        # Deserialize the incoming JSON data
-        serializer = LoginSerializer(data=request.data)
+        try:
+            serializer = LoginSerializer(data=request.data)
+            if serializer.is_valid():
+                email = serializer.validated_data['email']
+                password = serializer.validated_data['password']
+                
+                try:
+                    user = User.objects.get(email=email)
+                except User.DoesNotExist:
+                    return JsonResponse({'error': 'Invalid credentials'}, status=400)
+                
+                if bcrypt.checkpw(password.encode('utf-8'), user.password.encode('utf-8')):
+                    refresh = RefreshToken()
+                    refresh['user_email'] = user.email
+                    refresh['username'] = user.username
 
-        if serializer.is_valid():
-            email = serializer.validated_data['email']
-            password = serializer.validated_data['password']
-            
-            # Try to get the user by email
-            try:
-                user = User.objects.get(email=email)
-            except User.DoesNotExist:
-                return JsonResponse({'error': 'Invalid credentials'}, status=400)
-            
-            hashed_password = hashlib.sha256(password.encode('utf-8')).hexdigest()
-        
-        # Now compare the hashed version of the password with the one stored in the DB
-            if hashed_password == user.password:
-                refresh = RefreshToken.for_user(user)
-                access_token = str(refresh.access_token)
-                refresh_token = str(refresh)
+                    response = JsonResponse({
+                        'status': 'success',
+                        'message': 'Login successful',
+                        'username': user.username,
+                        'email': user.email,
+                        'access': str(refresh.access_token),
+                        'refresh': str(refresh),
+                    })
+                    
+                    # Add CORS headers
+                    response["Access-Control-Allow-Origin"] = "*"
+                    response["Access-Control-Allow-Methods"] = "POST, OPTIONS"
+                    response["Access-Control-Allow-Headers"] = "Content-Type, Authorization"
+                    
+                    return response
+                else:
+                    return JsonResponse({'error': 'Invalid credentials'}, status=400)
+            return JsonResponse({'error': 'Invalid data'}, status=400)
+        except Exception as e:
+            print(f"Login error: {str(e)}")
+            return JsonResponse({'error': 'Server error'}, status=500)
 
-                # Return success with the username, access token, and refresh token
-                return JsonResponse({
-                    'message': 'Login successful',
-                    'username': user.username,  # Include the username here
-                    'access': access_token,
-                    'refresh': refresh_token,
-                }, status=200)
-            else:
-                # Return error if password does not match
-                return JsonResponse({'error': 'Invalid credentials'}, status=400)
+    def options(self, request):
+        response = JsonResponse({}, status=200)
+        response["Access-Control-Allow-Origin"] = "*"
+        response["Access-Control-Allow-Methods"] = "POST, OPTIONS"
+        response["Access-Control-Allow-Headers"] = "Content-Type, Authorization"
+        return response
 
-        return JsonResponse({'error': 'Bad request, invalid data'}, status=400)
 class ProtectedView(APIView):
     permission_classes = [IsAuthenticated]
 
@@ -207,12 +306,14 @@ class SignupView1(APIView):
         
         if not email_valid:
             return Response({'error': 'Invalid email address'}, status=status.HTTP_300_MULTIPLE_CHOICES)
-
+        # Hash the password with bcrypt before saving
+        password = request.data.get('password')
+        hashed_password = bcrypt.hashpw(password.encode('utf-8'), bcrypt.gensalt())
         # Store user data temporarily in UserAuth model
         user_auth = UserAuth(
             username=request.data.get('username'),
             email=email,
-            password=hashlib.sha256(request.data.get('password').encode('utf-8')).hexdigest()
+            password=hashed_password.decode('utf-8')  # Save as a string in DB
         )
         user_auth.save()
         
@@ -271,3 +372,51 @@ class VerifyEmailView(APIView):
                 return HttpResponse("The verification link has expired or is invalid. Please sign up again.")
         except Exception as e:
             return HttpResponse(f"Error: {str(e)}")
+class UserChatAPIView(APIView):
+    def get(self, request):
+        email = request.GET.get('email')
+        chat_id = request.GET.get('chat_id')
+
+        # Validate user existence
+        user = get_object_or_404(User, email__iexact=email.strip())
+
+        # If chat_id is provided, fetch all prompts for that chat
+        if chat_id:
+            chat = get_object_or_404(Chat, chat_id=chat_id, user=user)
+            prompts = ChatPrompt.objects.filter(chat=chat).order_by('created_at')
+            return Response(ChatPromptSerializer(prompts, many=True).data, status=status.HTTP_200_OK)
+
+        # If chat_id is NOT provided, fetch all chats and the latest chat's prompts
+        chats = Chat.objects.filter(user=user).order_by('-created_at')
+        latest_chat = chats.first()
+        latest_chat_prompts = ChatPrompt.objects.filter(chat=latest_chat).order_by('-created_at') if latest_chat else []
+
+        # Prepare response
+        response_data = {
+            'all_chats': [{'chat_id': chat.chat_id, 'created_at': chat.created_at} for chat in chats],
+            'latest_chat': {
+                'chat_id': latest_chat.chat_id if latest_chat else None,
+                'created_at': latest_chat.created_at if latest_chat else None,
+                'prompts': ChatPromptSerializer(latest_chat_prompts, many=True).data
+            } if latest_chat else None
+        }
+
+        return Response(response_data, status=status.HTTP_200_OK)
+class DeleteUserChatAPIView(APIView):
+    def delete(self, request):
+        email = request.GET.get('email')
+        chat_id = request.GET.get('chat_id')
+
+        # Validate user
+        user = get_object_or_404(User, email=email)
+
+        # Validate chat
+        chat = get_object_or_404(Chat, chat_id=chat_id, user=user)
+
+        # Delete all related chat prompts
+        ChatPrompt.objects.filter(chat=chat).delete()
+
+        # Delete the chat itself
+        chat.delete()
+
+        return Response({'message': 'Chat and related prompts deleted successfully'}, status=status.HTTP_200_OK)

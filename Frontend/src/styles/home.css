@@ -5,6 +5,47 @@
   background-color: #0B1124;
   margin-top: 3.9%;
 }
+.light-mode svg{
+  background-color: none;
+}
+Spinner overlay styling */
+.spinner-overlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  background-color: rgba(0, 0, 0, 0.5); /* Dim background */
+  z-index: 10; /* Ensure it appears above the content */
+}
+/* Spinner styling */
+.spinner {
+  width: 50px;
+  height: 50px;
+  border: 4px solid rgba(255, 255, 255, 0.3);
+  border-top-color: #5bb9fc;
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+}
+
+/* Keyframes for spinning animation */
+@keyframes spin {
+  0% {
+    transform: rotate(0deg);
+  }
+  100% {
+    transform: rotate(360deg);
+  }
+}
+
+/* Apply blur effect to content behind spinner */
+.blurred-container {
+  filter: blur(5px); /* Blur content behind */
+}
+
 .welcome{
   display: flex;
   flex-direction: column;
@@ -156,28 +197,46 @@
 .history-item {
   padding: 8px;
   margin: 5px 0;
-  background-color: #0B1124;
   border-radius: 4px;
   cursor: pointer;
   display: flex;
   justify-content: space-between;
   align-items: center;
+  transition: background-color 0.3s ease, color 0.3s ease;
+}
+
+.history-item:hover {
+  background-color: rgba(106, 106, 240, 0.8);
+  color: white;
+}
+
+.history-item:hover .delete-prompt-btn {
+  color: white;
 }
 
 .delete-prompt-btn {
   background: none;
   border: none;
-  color: #ff6347;
   cursor: pointer;
   padding: 4px;
   opacity: 0.7;
-  transition: opacity 0.2s ease;
+  transition: color 0.3s ease, opacity 0.2s ease;
   display: flex;
   align-items: center;
 }
 
 .delete-prompt-btn:hover {
   opacity: 1;
+}
+
+/* Light mode adjustments */
+.light-mode .history-item {
+  background-color: transparent;
+}
+
+.light-mode .history-item.selected {
+  background-color: #6a6af0;
+  color: white;
 }
 
 .light-mode .delete-prompt-btn {
@@ -208,7 +267,7 @@
 }
 
 .user-icon {
-  font-size: 24px;
+  font-size: 18px;
   margin-right: 10px;
 }
 
@@ -219,6 +278,10 @@
   max-width: 100ch; /* Limit the width to around 60 characters (approximately 60 words) */
   white-space: pre-wrap; /* Respect line breaks within the text */
   color: white;
+}
+
+.Architexture-icon{
+  color: linear-gradient(135deg, #6a6af0, #8e72f1);
 }
 
 /* Input area at the bottom */
@@ -515,23 +578,38 @@
   margin-bottom: 15px;
 }
 .user-message {
-  align-self: flex-end; /* Align to the right */
+  align-self: flex-end;
   display: flex;
-  align-items: center;
+  align-items: flex-start;
   margin-bottom: 5px;
   padding: 10px;
   border-radius: 12px;
   max-width: 50%;
   word-wrap: break-word;
-  white-space: pre-wrap; /* Ensures text wraps to the next line */
-  word-wrap: break-word; /* Breaks long words to fit within the container */
-  word-break: break-word; /* Additional support for word breaking */
+  white-space: pre-wrap;
+  word-wrap: break-word;
+  word-break: break-word;
+}
+
+.user-icon {
+  margin-right: 10px;
+  font-size: 20px;
+  line-height: 1;
+  margin-top: 2px;
+}
+
+.prompt-text {
+  color: white;
+  line-height: 1.5;
+  display: inline-block;
+  vertical-align: top;
 }
 
 .response {
-  align-self: flex-start; /* Align to the left */
+  align-self: flex-start;
   display: flex;
-  align-items: center;
+  flex-direction: column;
+  align-items: flex-start;
   margin-bottom: 5px;
   padding: 10px;
   border-radius: 12px;
@@ -539,14 +617,12 @@
   word-wrap: break-word;
 }
 
-.user-icon {
-  margin-right: 10px;
-  font-size: 20px;
-}
-
 .response-icon {
-  margin-right: 10px;
   font-size: 20px;
+  margin-bottom: 10px;
+  font-weight: bolder;
+  align-self: flex-start;
+  color: white;
 }
 
 .prompt-text {
@@ -555,6 +631,10 @@
 
 .response-text {
   color: white;
+  padding: 10px;
+  margin-top: 10px;
+  animation: slideIn 0.5s ease-out;
+  width: 100%;
 }
 
 .messages::-webkit-scrollbar {
@@ -580,7 +660,9 @@
 .light-mode .response-text{
   color: #0B1124;
 }
-
+.light-mode .response-icon{
+  color: black;
+}
 /* Add these responsive styles */
 @media screen and (max-width: 1023px) {
   .chatbot-container{
@@ -970,4 +1052,41 @@
         height: calc(100vh - 100px);
         margin-top: 10%;
     }
+}
+
+/* Add text animation */
+@keyframes slideIn {
+  from {
+    transform: translateX(-20px);
+    opacity: 0;
+  }
+  to {
+    transform: translateX(0);
+    opacity: 1;
+  }
+}
+
+/* SVG container styles */
+.svg-container {
+  margin-top: 10px;
+  width: 200px;
+  animation: slideIn 0.5s ease-out;
+}
+
+/* Responsive adjustments */
+@media screen and (max-width: 768px) {
+  .response {
+    max-width: 85%;
+  }
+}
+
+@media screen and (max-width: 480px) {
+  .response {
+    max-width: 90%;
+  }
+  
+  .response-icon {
+    font-size: 18px;
+    margin-bottom: 8px;
+  }
 }

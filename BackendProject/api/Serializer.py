@@ -1,6 +1,8 @@
 import hashlib
 from rest_framework import serializers
 from .models import User
+from .models import Chat, ChatPrompt
+import bcrypt
 # from django.contrib.auth.hashers import make_password
 # from django.contrib.auth import get_user_model, authenticate
 
@@ -36,11 +38,11 @@ class UserSerializer(serializers.ModelSerializer):
 
     def create(self, validated_data):
         # Use `create_user` to handle password hashing
-        validated_data['password'] = hashlib.sha256(validated_data['password'].encode('utf-8')).hexdigest()
+        # validated_data['password'] = hashlib.sha256(validated_data['password'].encode('utf-8')).hexdigest()
         user = User.objects.create(
             username=validated_data['username'],
             email=validated_data['email'],
-            password=validated_data['password'],
+            password=bcrypt.hashpw(validated_data['password'].encode('utf-8'), bcrypt.gensalt()).decode('utf-8')  # Hash and decode as string,
         )
         return user
     
@@ -93,10 +95,21 @@ class StorePasswordSerializer(serializers.Serializer):
     def save(self):
         email = self.validated_data["email"]
         password = self.validated_data["password"]
-
+        hashed_password = bcrypt.hashpw(password.encode('utf-8'), bcrypt.gensalt())
         # Get the user object and update the password
         user = User.objects.get(email=email)
-        user.password = hashlib.sha256(password.encode('utf-8')).hexdigest() # Hash the password
+        user.password = hashed_password.decode('utf-8')  # Hash the password
         user.save()
 
         return user
+class ChatPromptSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = ChatPrompt
+        fields = ['id', 'prompt_text', 'output_text', 'boundary_box', 'created_at']
+
+class ChatSerializer(serializers.ModelSerializer):
+    prompts = ChatPromptSerializer(many=True, read_only=True, source='chatprompt_set')
+
+    class Meta:
+        model = Chat
+        fields = ['chat_id', 'created_at', 'prompts']

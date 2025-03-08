@@ -4,8 +4,10 @@ import { Link, useNavigate } from 'react-router-dom';
 import '../styles/home.css';
 import { FaSun, FaMoon, FaBars, FaTrash } from 'react-icons/fa'; // Importing the hamburger icon
 import ProCard from "../Components/card";
-
-function ChatbotUI() {
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
+import { faHouseChimney } from '@fortawesome/free-solid-svg-icons';
+import { faUser } from '@fortawesome/free-solid-svg-icons';
+function HomePage() {
     const [input, setInput] = useState('');
     const [history, setHistory] = useState({ 1: [] });
     const [currentPromptId, setCurrentPromptId] = useState(1);
@@ -19,6 +21,78 @@ function ChatbotUI() {
     const navigate = useNavigate();
     const messagesEndRef = useRef(null);
     const [windowWidth, setWindowWidth] = useState(window.innerWidth);
+
+    useEffect(() => {
+        const fetchChatHistory = async () => {
+            try {
+                const userEmail = Cookies.get('email'); // Get email from cookies
+                if (!userEmail) throw new Error("User email not found. Please login again.");
+    
+                const response = await fetch(`http://127.0.0.1:8000/api/retrive-data?email=${userEmail}`, {
+                    method: 'GET',
+                    headers: { 'Content-Type': 'application/json' },
+                    credentials: 'include',
+                });
+    
+                if (!response.ok) {
+                    throw new Error("Failed to fetch chat history.");
+                }
+    
+                const data = await response.json();
+                console.log("Fetched chat history:", data);
+            console.log("Fetched chat history:", data);
+
+            // If there are no chats, show welcome message
+            if (!data.all_chats || data.all_chats.length === 0) {
+                setShowWelcome(true);
+                return;
+            }
+                // Sort chats by created_at (Descending Order)
+                const sortedChats = data.all_chats.sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
+    
+                // Initialize history object with chat IDs
+                
+                // Transform into expected format
+        const newHistory = {};
+        sortedChats.forEach(chat => {
+            newHistory[chat.chat_id] = [];
+        });
+
+    // Set history and active prompt
+setHistory(newHistory);
+setShowWelcome(false); // Hide the welcome screen
+
+// Set the latest chat ID
+const latestChatId = data.latest_chat.chat_id;
+setSelectedPromptId(latestChatId);
+
+
+setHistory((prevHistory) => ({
+    ...prevHistory,
+    [latestChatId]: data.latest_chat.prompts
+        .sort((a, b) => a.id - b.id) // Sort by ID in ascending order
+        .map((prompt) => {
+            const hasBoundaryBox = prompt.boundary_box && prompt.boundary_box.length > 0;
+            return {
+                text: prompt.prompt_text,
+                output_text: prompt.output_text,
+                predictions: hasBoundaryBox ? prompt.boundary_box : [],
+                success: hasBoundaryBox, // Success is true only if boundary box exists
+                message: hasBoundaryBox ? null : prompt.output_text || "No valid predictions.",
+            };
+        }),
+}));
+            } catch (error) {
+                console.error("Error fetching chat history:", error);
+            }
+        };
+    
+        fetchChatHistory();
+    }, []);
+
+
+    
+
 
     useEffect(() => {
         if (messagesEndRef.current) {
@@ -72,30 +146,59 @@ alert("You have been logged out.");
             const newPrompt = { text: input, mode };
     
             // Add the input message with a loading state to history
-             // Add the prompt to history with a loading placeholder
-        setHistory((prevHistory) => ({
-            ...prevHistory,
-            [selectedPromptId]: [...(prevHistory[selectedPromptId] || []), { ...newPrompt, loading: true }],
-        }));
-        setInput("")
+            setHistory((prevHistory) => ({
+                ...prevHistory,
+                [selectedPromptId]: [...(prevHistory[selectedPromptId] || []), { ...newPrompt, loading: true }],
+            }));
+            setInput("");
+
             try {
+                const userEmail = Cookies.get('email'); // Get email from cookie
+                // Debug logs
+                console.log('Sending request with data:', {
+                    input,
+                    mode,
+                    email: userEmail,
+                    promptId: selectedPromptId,
+                });
+                
+                if (!userEmail) {
+                    throw new Error('User email not found. Please login again.');
+                }
+
+                if (!selectedPromptId) {
+                    throw new Error('No prompt ID selected.');
+                }
+
+                const requestData = {
+                    input: input,
+                    mode: mode,
+                    email: userEmail,
+                    promptId: selectedPromptId  // Changed from selectedPromptId to promptId
+                };
+                
+
+                console.log('Request body:', JSON.stringify(requestData));
+
                 const response = await fetch('http://127.0.0.1:8000/api/process-houseplan/', {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',
                     },
-                    body: JSON.stringify({ input, mode }),
+                    credentials: 'include',  // Include cookies in the request
+                    body: JSON.stringify(requestData),
                 });
     
                 let newResponse = {}; // To store the response
     
                 if (response.ok) {
                     const data = await response.json();
+                    console.log('Successful response:', data);
     
                     if (data.predictions && data.predictions.length > 0) {
                         // Handle valid predictions
                         newResponse = {
-                            predictions: data.predictions, // Bounding boxes
+                            predictions: data.predictions,
                             success: true,
                             text: input,
                         };
@@ -109,6 +212,7 @@ alert("You have been logged out.");
                     }
                 } else {
                     const errorData = await response.json();
+                    console.error('Error response:', errorData);
                     newResponse = {
                         message: errorData.error || 'An error occurred.',
                         success: false,
@@ -124,9 +228,9 @@ alert("You have been logged out.");
                     ),
                 }));
             } catch (error) {
-                console.error('Error:', error);
+                console.error('Request error:', error);
                 const newResponse = {
-                    message: 'An error occurred. Please try again.',
+                    message: error.message || 'An error occurred. Please try again.',
                     success: false,
                     text: input,
                 };
@@ -169,29 +273,93 @@ alert("You have been logged out.");
         }
     };
 
-    const handleSelectPrompt = (promptId) => {
+    const handleSelectPrompt = async (promptId) => {
         setSelectedPromptId(promptId);
+        
+        try {
+            const response = await fetch(
+                `http://127.0.0.1:8000/api/retrive-data?email=ismailsarfraz9345@gmail.com&chat_id=${promptId}`
+            );
+            const data = await response.json();
+    
+            if (data && Array.isArray(data)) {
+                setHistory((prevHistory) => ({
+                    ...prevHistory,
+                    [promptId]: data
+                        .sort((a, b) => a.id - b.id) // Sort by ID in ascending order
+                        .map((prompt) => {
+                            const hasBoundaryBox = prompt.boundary_box && prompt.boundary_box.length > 0;
+                            return {
+                                text: prompt.prompt_text,
+                                output_text: prompt.output_text,
+                                predictions: hasBoundaryBox ? prompt.boundary_box : [],
+                                success: hasBoundaryBox, // Success is true only if boundary box exists
+                                message: hasBoundaryBox ? null : prompt.output_text || "No valid predictions.",
+                            };
+
+                        }),
+                        
+                }));
+                
+            }
+        } catch (error) {
+            console.error("Error fetching prompt data:", error);
+        }
+    
         // Show welcome message only if the selected chat has no history
         setShowWelcome(history[promptId]?.length === 0);
     };
+    
 
-    const handleDeletePrompt = (promptId, e) => {
+    const handleDeletePrompt = async (promptId, e) => {
         e.stopPropagation();
-        setHistory((prevHistory) => {
-            const newHistory = { ...prevHistory };
-            delete newHistory[promptId];
+    
+        // Get email from cookies
+        const userEmail = Cookies.get("email"); // Ensure 'email' is the correct cookie name
+    
+        if (!userEmail) {
+            alert("User email not found. Please log in again.");
+            return;
+        }
+    
+        try {
+            const response = await fetch(`http://127.0.0.1:8000/api/delete-chat?email=${userEmail}&chat_id=${promptId}`, {
+                method: "DELETE",
+                headers: {
+                    "Content-Type": "application/json",
+                },
+            });
+    
+            console.log("Delete chat response:", response);
             
-            // If we're deleting the currently selected prompt, select another one
-            if (selectedPromptId === promptId) {
-                const remainingIds = Object.keys(newHistory);
-                if (remainingIds.length > 0) {
-                    setSelectedPromptId(Number(remainingIds[0]));
-                }
+            if (response.status === 200) {
+                setHistory((prevHistory) => {
+                    const newHistory = { ...prevHistory };
+                    delete newHistory[promptId]; // Only delete the selected prompt without renumbering
+    
+                    // If the deleted prompt was the selected one, select another prompt
+                    if (selectedPromptId === promptId) {
+                        const remainingIds = Object.keys(newHistory).map(Number);
+                        if (remainingIds.length > 0) {
+                            setSelectedPromptId(Math.min(...remainingIds)); // Select the smallest remaining ID
+                        }
+                    }
+    
+                    // Update currentPromptId to the highest available ID
+                    const maxId = Math.max(...Object.keys(newHistory).map(Number), 0);
+                    setCurrentPromptId(maxId);
+    
+                    return newHistory; // Return updated history without renumbering
+                });
+            } else {
+                alert("Failed to delete chat. Please try again.");
             }
-            
-            return newHistory;
-        });
+        } catch (error) {
+            console.error("Error deleting chat:", error);
+            alert("An error occurred while deleting the chat.");
+        }
     };
+    
 
     // Handle window resize
     useEffect(() => {
@@ -322,7 +490,7 @@ alert("You have been logged out.");
                                     }}
                                     onClick={() => handleSelectPrompt(Number(promptId))}
                                 >
-                                    <span>Prompt {promptId}</span>
+                                    <span>Prompt </span>
                                     <button 
                                         className="delete-prompt-btn"
                                         onClick={(e) => handleDeletePrompt(Number(promptId), e)}
@@ -355,18 +523,18 @@ alert("You have been logged out.");
                                         </h1>
                                     </div>
                                 </div>
-                                <h1>What do you want to create</h1>
+                                <h1>Bring your vision to life with 2D & 3D plans</h1>
                             </div>
                         )}
                         {history[selectedPromptId] && history[selectedPromptId].map((prompt, index) => (
                             <div key={index} className="message">
                                 <div className="user-message">
-                                    <span className="user-icon">🙂</span>
+                                    <span className="user-icon"><FontAwesomeIcon icon={faUser}   style={{ color: '#1c7ed6' }}/></span>
                                     <span className="prompt-text">{prompt.text}</span>
                                 </div>
                         {/* Container for chat content and spinner overlay */}
                         <div className="response">
-                                <span className="response-icon">Architexture AI</span>
+                                <span className="response-icon"><FontAwesomeIcon icon={faHouseChimney} style={{ color: '#1c7ed6' }} /> Architexture AI</span>
 
                                 {/* Check if the request is loading */}
                                 {prompt.loading ? (
@@ -391,7 +559,7 @@ alert("You have been logged out.");
                                         <svg
                                             width="300"
                                             height="300"
-                                            viewBox="0 0 500 500"
+                                            viewBox="30 50 400 400"
                                             style={{
                                                 border: "1px solid black",
                                                 background: "white",
@@ -415,6 +583,7 @@ alert("You have been logged out.");
                                                 );
                                             })}
                                         </svg>
+                                        
                                     </div>
                                     
                                 ) : (
@@ -447,10 +616,10 @@ alert("You have been logged out.");
     rows={1}
     disabled={loading} // Disable input while loading
 />
-<button className="mode-button" onClick={() => handleSendPrompt("2D")} disabled={loading}>
+<button className="mode-button"  onClick={() => handleSendPrompt("2D")} disabled={loading}>
     2D
 </button>
-<button className="mode-button" onClick={() => handleSendPrompt("3D")} disabled={loading}>
+<button className="mode-button"  disabled={loading}>
     3D
 </button>
 
@@ -461,4 +630,4 @@ alert("You have been logged out.");
     );
 }
 
-export default ChatbotUI;
+export default HomePage;

@@ -140,12 +140,12 @@ const password_form= ()=>{
         email,
         password,
       });
-
       if (response.status === 200) {
         // Set the username in cookies
+        // const data = await response.json();
         Cookies.set('username', response.data.username, { secure: true, sameSite: 'Strict' });
         Cookies.set('user_session', response.data.token, { secure: true, sameSite: 'Strict' });
-
+        Cookies.set('email', email);
         alert("Login Successful");
         navigate("/home-page");
       } else {
@@ -338,12 +338,12 @@ const password_form= ()=>{
       <Navbar />
 
       <div className="login-page">
-        <div className="circle"></div>
+        {/* <div className="circle"></div>
         <div className="circle"></div>
         <div className="circle"></div>
         <div className="line"></div>
         <div className="line"></div>
-        <div className="line"></div>
+        <div className="line"></div> */}
         
 
         <div className="login-container">

@@ -23,5 +23,8 @@ def load_views():
         path('verify-otp/', views.VerifyOtpView.as_view(), name='verify-otp'),
         path('signup/', views.SignupView1.as_view(), name='signup'),
         path('verify-email/<uidb64>/<token>/', views.VerifyEmailView.as_view(), name='verify_email'),
+        path("process-houseplan/", views.HousePlanAPI.as_view(), name="process-houseplan"),
+        path("retrive-data",views.UserChatAPIView.as_view()),
+        path("delete-chat",views.DeleteUserChatAPIView.as_view()),
     ])
 load_views()

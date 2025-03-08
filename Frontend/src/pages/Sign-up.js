@@ -95,12 +95,12 @@ function Signup() {
     <div>
       <Navbar />
       <div className="Signin-page">
-        <div className="circle"></div>
+        {/* <div className="circle"></div>
         <div className="circle"></div>
         <div className="circle"></div>
         <div className="line"></div>
         <div className="line"></div>
-        <div className="line"></div>
+        <div className="line"></div> */}
         <div className="Signin-container">
           <h2>Create New Account</h2>
 
