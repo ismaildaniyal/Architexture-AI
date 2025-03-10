@@ -48,7 +48,7 @@ class ChatPrompt(models.Model):
     id = models.AutoField(primary_key=True)
     prompt_text = models.TextField()
     output_text = models.TextField(blank=True, null=True)
-    boundary_box = models.JSONField(blank=True, null=True)
+    image_path = models.CharField(max_length=255, blank=True, null=True)  # New field for image path
     created_at = models.DateTimeField(auto_now_add=True)
     chat = models.ForeignKey(Chat, on_delete=models.CASCADE)  # Link to Chat model
 

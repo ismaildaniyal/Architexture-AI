@@ -1,7 +1,6 @@
 import hashlib
 from rest_framework import serializers
 from .models import User
-from .models import Chat, ChatPrompt
 import bcrypt
 # from django.contrib.auth.hashers import make_password
 # from django.contrib.auth import get_user_model, authenticate
@@ -29,7 +28,19 @@ import bcrypt
 #         if not user:
 #             raise serializers.ValidationError('Invalid credentials')
 #         return user
+from .models import Chat, ChatPrompt
 
+class ChatPromptSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = ChatPrompt
+        fields = ['id', 'prompt_text', 'output_text', 'image_path', 'created_at', 'chat']
+
+class ChatSerializer(serializers.ModelSerializer):
+    prompts = ChatPromptSerializer(many=True, read_only=True, source='chatprompt_set')
+
+    class Meta:
+        model = Chat
+        fields = ['chat_id', 'created_at', 'prompts']
 
 class UserSerializer(serializers.ModelSerializer):
     class Meta:
@@ -102,14 +113,3 @@ class StorePasswordSerializer(serializers.Serializer):
         user.save()
 
         return user
-class ChatPromptSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = ChatPrompt
-        fields = ['id', 'prompt_text', 'output_text', 'boundary_box', 'created_at']
-
-class ChatSerializer(serializers.ModelSerializer):
-    prompts = ChatPromptSerializer(many=True, read_only=True, source='chatprompt_set')
-
-    class Meta:
-        model = Chat
-        fields = ['chat_id', 'created_at', 'prompts']

@@ -22,6 +22,29 @@ function HomePage() {
     const messagesEndRef = useRef(null);
     const [windowWidth, setWindowWidth] = useState(window.innerWidth);
 
+    const [isOpen, setIsOpen] = useState(false);
+    const [selectedImage, setSelectedImage] = useState(null); // Store clicked image
+
+    const openModal = (imageUrl) => {
+        setSelectedImage(imageUrl); // Save the clicked image
+        setIsOpen(true);
+    };
+
+    const closeModal = () => {
+        setIsOpen(false);
+        setSelectedImage(null); // Clear image when closing
+    };
+
+    // Function to download the image
+    const downloadImage = () => {
+        if (!selectedImage) return;
+        const link = document.createElement("a");
+        link.href = selectedImage;
+        link.download = "House_Plan.png"; // Default filename
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+    };
     useEffect(() => {
         const fetchChatHistory = async () => {
             try {
@@ -40,13 +63,7 @@ function HomePage() {
     
                 const data = await response.json();
                 console.log("Fetched chat history:", data);
-            console.log("Fetched chat history:", data);
-
-            // If there are no chats, show welcome message
-            if (!data.all_chats || data.all_chats.length === 0) {
-                setShowWelcome(true);
-                return;
-            }
+    
                 // Sort chats by created_at (Descending Order)
                 const sortedChats = data.all_chats.sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
     
@@ -72,13 +89,14 @@ setHistory((prevHistory) => ({
     [latestChatId]: data.latest_chat.prompts
         .sort((a, b) => a.id - b.id) // Sort by ID in ascending order
         .map((prompt) => {
-            const hasBoundaryBox = prompt.boundary_box && prompt.boundary_box.length > 0;
+            const imageName = prompt.image_path ? prompt.image_path.split('\\').pop() : null;
+            console.log('Image name:', imageName);
             return {
                 text: prompt.prompt_text,
                 output_text: prompt.output_text,
-                predictions: hasBoundaryBox ? prompt.boundary_box : [],
-                success: hasBoundaryBox, // Success is true only if boundary box exists
-                message: hasBoundaryBox ? null : prompt.output_text || "No valid predictions.",
+                image: imageName ? `http://127.0.0.1:8000/api/get-image/${imageName}` : null, // Fetch from API
+                success: !!prompt.image_path, // Success if image path exists
+                message: prompt.image_path ? null : prompt.output_text || "No valid image available.",
             };
         }),
 }));
@@ -89,11 +107,6 @@ setHistory((prevHistory) => ({
     
         fetchChatHistory();
     }, []);
-
-
-    
-
-
     useEffect(() => {
         if (messagesEndRef.current) {
             messagesEndRef.current.scrollIntoView({ behavior: 'smooth' });
@@ -192,24 +205,16 @@ alert("You have been logged out.");
                 let newResponse = {}; // To store the response
     
                 if (response.ok) {
-                    const data = await response.json();
-                    console.log('Successful response:', data);
-    
-                    if (data.predictions && data.predictions.length > 0) {
-                        // Handle valid predictions
-                        newResponse = {
-                            predictions: data.predictions,
-                            success: true,
-                            text: input,
-                        };
-                    } else {
-                        // Handle invalid predictions
-                        newResponse = { 
-                            message: 'Invalid response from the API', 
-                            success: false, 
-                            text: input 
-                        };
-                    }
+                    // Convert response to Blob for image handling
+                const blob = await response.blob();
+                const imageUrl = URL.createObjectURL(blob);
+                console.log('Image received:', imageUrl);
+
+                newResponse = {
+                    image: imageUrl,
+                    success: true,
+                    text: input,
+                };
                 } else {
                     const errorData = await response.json();
                     console.error('Error response:', errorData);
@@ -288,19 +293,17 @@ alert("You have been logged out.");
                     [promptId]: data
                         .sort((a, b) => a.id - b.id) // Sort by ID in ascending order
                         .map((prompt) => {
-                            const hasBoundaryBox = prompt.boundary_box && prompt.boundary_box.length > 0;
+                            const imageName = prompt.image_path ? prompt.image_path.split('\\').pop() : null;
+                            console.log('Image name:', imageName);
                             return {
                                 text: prompt.prompt_text,
                                 output_text: prompt.output_text,
-                                predictions: hasBoundaryBox ? prompt.boundary_box : [],
-                                success: hasBoundaryBox, // Success is true only if boundary box exists
-                                message: hasBoundaryBox ? null : prompt.output_text || "No valid predictions.",
+                                image: imageName ? `http://127.0.0.1:8000/api/get-image/${imageName}` : null, // Fetch from API
+                                success: !!prompt.image_path, // Success if image path exists
+                                message: prompt.image_path ? null : prompt.output_text || "No valid image available.",
                             };
-
                         }),
-                        
                 }));
-                
             }
         } catch (error) {
             console.error("Error fetching prompt data:", error);
@@ -381,7 +384,7 @@ alert("You have been logged out.");
         // Cleanup
         return () => window.removeEventListener('resize', handleResize);
     }, []);
-
+ 
     // Get dynamic styles based on window width
     const getResponsiveStyles = () => {
         if (windowWidth <= 480) {
@@ -556,35 +559,110 @@ alert("You have been logged out.");
                                     </div>
                                 ) : prompt.success ? (
                                     <div className="svg-container">
-                                        <svg
-                                            width="300"
-                                            height="300"
-                                            viewBox="30 50 400 400"
-                                            style={{
-                                                border: "1px solid black",
-                                                background: "white",
-                                            }}
-                                        >
-                                            {prompt.predictions.map((box, index) => {
-                                                const { 0: b_x, 1: b_y, 2: a_x, 3: a_y } = box;
-                                                const width = a_x - b_x;
-                                                const height = a_y - b_y;
-                                                return (
-                                                    <rect
-                                                        key={index}
-                                                        x={b_x}
-                                                        y={b_y}
-                                                        width={width}
-                                                        height={height}
-                                                        fill="none"
-                                                        stroke="#6a6af0"
-                                                        strokeWidth="4"
-                                                    />
-                                                );
-                                            })}
-                                        </svg>
-                                        
-                                    </div>
+                                    {prompt.image ? (
+                                        <>
+                                            {/* Clickable Image */}
+                                            <img
+                                                src={prompt.image}
+                                                alt="Generated House Plan"
+                                                style={{ width: "300px", height: "300px", border: "1px solid black", background: "white", cursor: "pointer" }}
+                                                onClick={() => openModal(prompt.image)} // Pass the clicked image
+                                            />
+                        
+                                            {/* Modal Popup */}
+                                            {isOpen && selectedImage && (
+                                                <div className="modal-overlay" onClick={closeModal}>
+                                                    <div className="modal-content" onClick={(e) => e.stopPropagation()}>
+                                                        <span className="close-btn" onClick={closeModal}>&times;</span>
+                                                        <img src={selectedImage} alt="Full View" className="modal-image" />
+                                                        <button className="download-btn" onClick={downloadImage}>Download Image</button>
+                                                    </div>
+                                                </div>
+                                            )}
+                                        </>
+                                    ) : (
+                                        <p>Loading image...</p>
+                                    )}
+                        
+                                    {/* CSS for Modal */}
+                                    <style jsx>{`
+                                        .modal-overlay {
+                                            position: fixed;
+                                            top: 0;
+                                            left: 0;
+                                            width: 100%;
+                                            height: 100%;
+                                            background: rgba(0, 0, 0, 0.5);
+                                            backdrop-filter: blur(10px);
+                                            display: flex;
+                                            align-items: center;
+                                            justify-content: center;
+                                            z-index: 1000;
+                                            animation: fadeIn 0.3s ease-in-out;
+                                        }
+                        
+                                        .modal-content {
+                                            position: relative;
+                                            background: white;
+                                            padding: 20px;
+                                            border-radius: 10px;
+                                            max-width: 90%;
+                                            max-height: 90%;
+                                            display: flex;
+                                            flex-direction: column;
+                                            align-items: center;
+                                            box-shadow: 0px 4px 10px rgba(0, 0, 0, 0.2);
+                                            animation: scaleUp 0.3s ease-in-out;
+                                        }
+                        
+                                        .modal-image {
+                                            max-width: 100%;
+                                            max-height: 70vh;
+                                            border-radius: 8px;
+                                        }
+                        
+                                        .close-btn {
+                                            position: absolute;
+                                            top: 10px;
+                                            right: 15px;
+                                            font-size: 24px;
+                                            cursor: pointer;
+                                            color: black;
+                                            font-weight: bold;
+                                            transition: transform 0.2s;
+                                        }
+                        
+                                        .close-btn:hover {
+                                            transform: scale(1.2);
+                                        }
+                        
+                                        .download-btn {
+                                            margin-top: 15px;
+                                            padding: 10px 20px;
+                                            background: #007bff;
+                                            color: white;
+                                            border: none;
+                                            border-radius: 5px;
+                                            cursor: pointer;
+                                            font-size: 16px;
+                                            transition: background 0.3s;
+                                        }
+                        
+                                        .download-btn:hover {
+                                            background: #0056b3;
+                                        }
+                        
+                                        @keyframes fadeIn {
+                                            from { opacity: 0; }
+                                            to { opacity: 1; }
+                                        }
+                        
+                                        @keyframes scaleUp {
+                                            from { transform: scale(0.8); opacity: 0; }
+                                            to { transform: scale(1); opacity: 1; }
+                                        }
+                                    `}</style>
+                                </div>
                                     
                                 ) : (
                                     <span className="response-text">

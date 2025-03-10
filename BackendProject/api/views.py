@@ -1,9 +1,11 @@
+import uuid
+from django.utils import timezone
 import hashlib
 import random
 from urllib import request
 from django.http import HttpResponseRedirect, JsonResponse
 from django.urls import reverse
-from .models import Chat, ChatPrompt, User, UserAuth
+from .models import User, UserAuth, Chat, ChatPrompt
 from .Serializer import ChatPromptSerializer, UserSerializer, LoginSerializer,validate_Email_Serializer,StorePasswordSerializer
 from rest_framework.generics import ListAPIView
 from rest_framework.response import Response
@@ -29,10 +31,9 @@ from django.utils.http import urlsafe_base64_encode, urlsafe_base64_decode
 import numpy as np
 import torch
 from Model_Implimentaion.test import validate_and_enhance_house_plan  # Import functions from file1
-from Model_Implimentaion.model_implement import  GraphTransformerMLPModel  # Import models from file2
+from Model_Implimentaion.model_implement import main  # Import model from file2
 import os
 import bcrypt
-from django.utils import timezone
 class UserList(ListAPIView):
     queryset = User.objects.all()
     serializer_class = UserSerializer
@@ -45,7 +46,37 @@ def process_input(user_input):
         return False
     else:
         return True
-#House Floor Plan API
+    
+    
+from rest_framework.views import APIView
+from rest_framework.response import Response
+from rest_framework import status
+from django.http import HttpResponse
+from django.utils import timezone
+import uuid
+import os
+from .models import User, Chat, ChatPrompt
+# from api.utils import process_input, validate_and_enhance_house_plan, main  # Import helper functions
+
+
+def get_image(request, image_name):
+    image_path = os.path.join(r"C:\Users\SMART TECH\Desktop\New folder (2)\Architexture-AI\BackendProject\images", image_name)
+    print(f"Attempting to load image from: {image_path}")  # Debugging
+
+    if not os.path.exists(image_path):
+        print("Image not found!")  # Debugging
+        return HttpResponse("Image not found", status=404)
+    
+    try:
+        with open(image_path, "rb") as image_file:
+            return HttpResponse(image_file.read(), content_type="image/png")
+    except FileNotFoundError:
+        return HttpResponse("Image not found", status=404)
+
+
+
+
+
 class HousePlanAPI(APIView):
     def post(self, request):
         user_input = request.data.get("input")
@@ -61,52 +92,40 @@ class HousePlanAPI(APIView):
             return Response({"error": "I'm not able to write any code."}, status=status.HTTP_400_BAD_REQUEST)
 
         try:
+            # Get user by email
             user = User.objects.get(email=email)
 
-            # Fetch or create chat
-            # chat, created = Chat.objects.get_or_create(chat_id=prompt_id, user=user, defaults={"created_at": timezone.now()})
-            # chat_created_at = chat.created_at if not created else timezone.now()
+            # Get or create chat
             chat, created = Chat.objects.get_or_create(
-            chat_id=prompt_id, user=user, defaults={"created_at": timezone.now()}
+                chat_id=prompt_id, user=user, defaults={"created_at": timezone.now()}
             )
             chat_created_at = chat.created_at if not created else timezone.now()
+
             # Validate house plan
             validation_result = validate_and_enhance_house_plan(user_input)
             if not validation_result["is_valid"]:
-                ChatPrompt.objects.create(chat=chat, prompt_text=user_input, output_text=validation_result["reason"], boundary_box=[], created_at=chat_created_at)
+                ChatPrompt.objects.create(
+                    chat=chat, prompt_text=user_input, output_text=validation_result["reason"], 
+                    image_path=None, created_at=chat_created_at
+                )
                 return Response({"error": validation_result["reason"]}, status=status.HTTP_400_BAD_REQUEST)
-            # Load adjacency and room matrices
-            print("Danial")
-            adj = np.load("C:/Users/SMART TECH/Documents/FYP/BackendProject/Model_Implimentaion/adjacency_matrix.npy", allow_pickle=True)
-            vec = np.load("C:/Users/SMART TECH/Documents/FYP/BackendProject/Model_Implimentaion/room_matrix.npy", allow_pickle=True)
-            print("Ajd",adj)
-            print("Adjacency matrix shape:", adj.shape)
-            print("Feature matrix shape:", vec.shape)
-            # Prepare matrices for the model
-            adj_matrix = torch.tensor(np.array(adj, dtype=np.float32))
-            feature_matrix = torch.tensor(np.array(vec, dtype=np.float32))
 
-            # Load the model
-            model = GraphTransformerMLPModel(
-                feature_dim=33,          # 19 (node features) + 14 (from A)
-                hidden_dim=64,
-                num_layers=3,
-                num_heads=4,
-                mlp_hidden_features=512
+            # Generate an image and save it
+            # image_id = uuid.uuid4().hex  # Generate unique image ID
+            # image_folder = "C:\Users\SMART TECH\Documents\FYP\BackendProject\Images"
+            # os.makedirs(image_folder, exist_ok=True)  # Ensure directory exists
+            # image_path = os.path.join(image_folder, f"final_image_{image_id}.png")
+            image_path=main()  # Call main function with image path
+
+            # Save in the database
+            chat_prompt = ChatPrompt.objects.create(
+                chat=chat, prompt_text=user_input, output_text="Success", 
+                image_path=image_path, created_at=chat_created_at
             )
-            model.load_state_dict(torch.load(r"C:\Users\SMART TECH\Desktop\New folder (2)\Architexture-AI\BackendProject\Model_Implimentaion\GraphTransformer.pth", weights_only=True), strict=False)
 
-            model.eval()
-
-            # Perform prediction
-            with torch.no_grad():
-                predictions = model(feature_matrix, adj_matrix)
-            # Convert predictions to a JSON-compatible format
-            predictions_list = predictions.numpy().tolist()
-             # Save successful response
-            ChatPrompt.objects.create(chat=chat, prompt_text=user_input, output_text="Success", boundary_box=predictions_list, created_at=chat_created_at)
-
-            return Response({"predictions": predictions_list}, status=status.HTTP_200_OK)
+            # Read image file and return in response
+            with open(image_path, "rb") as image_file:
+                return HttpResponse(image_file.read(), content_type="image/png")
 
         except User.DoesNotExist:
             return Response({"error": "User not found"}, status=status.HTTP_404_NOT_FOUND)
@@ -114,8 +133,65 @@ class HousePlanAPI(APIView):
         except Exception as e:
             error_message = str(e)
             if 'chat' in locals():
-                ChatPrompt.objects.create(chat=chat, prompt_text=user_input, output_text=error_message, boundary_box=[], created_at=chat_created_at)
+                ChatPrompt.objects.create(
+                    chat=chat, prompt_text=user_input, output_text=error_message, 
+                    image_path=None, created_at=chat_created_at
+                )
             return Response({"error": error_message}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+
+
+
+class UserChatAPIView(APIView):
+    def get(self, request):
+        email = request.GET.get('email','').strip()
+        chat_id = request.GET.get('chat_id')
+        if not email:  # If email is empty or missing
+            return Response({"error": "Email parameter is required."}, status=status.HTTP_400_BAD_REQUEST)
+
+        # Validate user existence
+        user = get_object_or_404(User, email__iexact=email.strip())
+
+        # If chat_id is provided, fetch all prompts for that chat
+        if chat_id:
+            chat = get_object_or_404(Chat, chat_id=chat_id, user=user)
+            prompts = ChatPrompt.objects.filter(chat=chat).order_by('created_at')
+            return Response(ChatPromptSerializer(prompts, many=True).data, status=status.HTTP_200_OK)
+
+        # If chat_id is NOT provided, fetch all chats and the latest chat's prompts
+        chats = Chat.objects.filter(user=user).order_by('-created_at')
+        latest_chat = chats.first()
+        latest_chat_prompts = ChatPrompt.objects.filter(chat=latest_chat).order_by('-created_at') if latest_chat else []
+
+        # Prepare response
+        response_data = {
+            'all_chats': [{'chat_id': chat.chat_id, 'created_at': chat.created_at} for chat in chats],
+            'latest_chat': {
+                'chat_id': latest_chat.chat_id if latest_chat else None,
+                'created_at': latest_chat.created_at if latest_chat else None,
+                'prompts': ChatPromptSerializer(latest_chat_prompts, many=True).data
+            } if latest_chat else None
+        }
+
+        return Response(response_data, status=status.HTTP_200_OK)
+class DeleteUserChatAPIView(APIView):
+    def delete(self, request):
+        email = request.GET.get('email')
+        chat_id = request.GET.get('chat_id')
+
+        # Validate user
+        user = get_object_or_404(User, email=email)
+
+        # Validate chat
+        chat = get_object_or_404(Chat, chat_id=chat_id, user=user)
+
+        # Delete all related chat prompts
+        ChatPrompt.objects.filter(chat=chat).delete()
+
+        # Delete the chat itself
+        chat.delete()
+
+        return Response({'message': 'Chat and related prompts deleted successfully'}, status=status.HTTP_200_OK)
 
 # class SignupView(APIView):
 #     def post(self, request):
@@ -372,51 +448,3 @@ class VerifyEmailView(APIView):
                 return HttpResponse("The verification link has expired or is invalid. Please sign up again.")
         except Exception as e:
             return HttpResponse(f"Error: {str(e)}")
-class UserChatAPIView(APIView):
-    def get(self, request):
-        email = request.GET.get('email')
-        chat_id = request.GET.get('chat_id')
-
-        # Validate user existence
-        user = get_object_or_404(User, email__iexact=email.strip())
-
-        # If chat_id is provided, fetch all prompts for that chat
-        if chat_id:
-            chat = get_object_or_404(Chat, chat_id=chat_id, user=user)
-            prompts = ChatPrompt.objects.filter(chat=chat).order_by('created_at')
-            return Response(ChatPromptSerializer(prompts, many=True).data, status=status.HTTP_200_OK)
-
-        # If chat_id is NOT provided, fetch all chats and the latest chat's prompts
-        chats = Chat.objects.filter(user=user).order_by('-created_at')
-        latest_chat = chats.first()
-        latest_chat_prompts = ChatPrompt.objects.filter(chat=latest_chat).order_by('-created_at') if latest_chat else []
-
-        # Prepare response
-        response_data = {
-            'all_chats': [{'chat_id': chat.chat_id, 'created_at': chat.created_at} for chat in chats],
-            'latest_chat': {
-                'chat_id': latest_chat.chat_id if latest_chat else None,
-                'created_at': latest_chat.created_at if latest_chat else None,
-                'prompts': ChatPromptSerializer(latest_chat_prompts, many=True).data
-            } if latest_chat else None
-        }
-
-        return Response(response_data, status=status.HTTP_200_OK)
-class DeleteUserChatAPIView(APIView):
-    def delete(self, request):
-        email = request.GET.get('email')
-        chat_id = request.GET.get('chat_id')
-
-        # Validate user
-        user = get_object_or_404(User, email=email)
-
-        # Validate chat
-        chat = get_object_or_404(Chat, chat_id=chat_id, user=user)
-
-        # Delete all related chat prompts
-        ChatPrompt.objects.filter(chat=chat).delete()
-
-        # Delete the chat itself
-        chat.delete()
-
-        return Response({'message': 'Chat and related prompts deleted successfully'}, status=status.HTTP_200_OK)
