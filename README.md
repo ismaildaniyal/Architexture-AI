@@ -66,8 +66,8 @@ ArchiTexture is an AI-powered platform that transforms natural language descript
 
 ## 👥 Contributors
 - **Ahmad Hassan** – Lead Developer
-- **Ismail Daniyal** – AI & ML Engineer
-- **Muhammad Zuhair** – Backend Developer (Django)
+- **Muhammad Zuhair** – AI & ML Engineer
+- **Ismail Daniyal** – Backend Developer (Django)
 
 ## 📜 License
 This project is licensed under the **MIT License**.
