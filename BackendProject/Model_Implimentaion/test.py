@@ -115,11 +115,23 @@ def validate_and_enhance_house_plan(user_input):
     check = process_input(user_input)
     print(check)
     # Validation step
+    total_response = chat_session.send_message(
+        f"""
+        You are a room count validator. 
+        Input: {user_input} 
+        return total number of rooms numeric value only e.g 10.
+        """
+    )
+    print(f"Total Response: {total_response.text.strip()}")
+    if  total_response.text.strip().isdigit() and int(total_response.text.strip()) > 12:
+        reason = "The total no of rooms exceed 12"
+        return {"is_valid":  False, "reason": reason}
     validation_response = chat_session.send_message(
         f"""
         You are a helpful assistant for generating and validating house plans. 
         Input: {user_input} 
-        Please give me 1 if the count and types of rooms are given and without mentioning multiple floors.. 
+        Do not assume anything.
+        Please give me 1 if the count and types of rooms are given and without mentioning multiple floors. 
         If the input is valid, respond only with "1".
         If invalid, provide "0" and a detailed reason for invalidation (e.g.room count mismatch, or multi-floor request or ask for code). 
         """
@@ -150,7 +162,7 @@ def validate_and_enhance_house_plan(user_input):
         Input: {enhancement_response1.text.strip()}
         =>Ensure each room has valid size.
         => First Assign adjacency of each room with others if not given.
-        =>Washroom never  attached with kitchen.
+        =>Washroom never  attached with kitchen.(Must)
         =>Adjacency must be logical and valid.
         => Do not add any room other than in user input.
         =>Generate a minimum adjacency structure for a house layout, ensuring that all rooms remain connected in a single structure. Assign room connections using the Minimum Spanning Tree (MST) approach, minimizing the number of connections while maintaining full accessibility between all rooms.
@@ -278,8 +290,8 @@ def validate_and_enhance_house_plan(user_input):
     vec = np.array(room_vec[0])
     print("Room Matrix:" + str(vec))
     print("Adjacency Matrix:" + str(adj))
-    np.save(r'C:\Users\SMART TECH\Desktop\New folder (2)\Architexture-AI\BackendProject\Model_Implimentaion\adjacency_matrix.npy', adj)
-    np.save(r'C:\Users\SMART TECH\Desktop\New folder (2)\Architexture-AI\BackendProject\Model_Implimentaion\room_matrix.npy', vec)
+    np.save(r'C:\Users\SMART TECH\Desktop\New folder (3)\Architexture-AI1\BackendProject\Model_Implimentaion\adjacency_matrix.npy', adj)
+    np.save(r'C:\Users\SMART TECH\Desktop\New folder (3)\Architexture-AI1\BackendProject\Model_Implimentaion\room_matrix.npy', vec)
     return {"is_valid": True, "reason": "No"} 
 
 def process_input(user_input):

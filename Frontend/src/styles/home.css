@@ -326,7 +326,7 @@ Spinner overlay styling */
   resize: none; /* Disable manual resizing */
   overflow-x: auto;
   white-space: pre-wrap; /* Ensures line breaks when text exceeds width */
-  min-height: 30px; /* To make sure input box is always visible */
+  min-height: 33px; /* To make sure input box is always visible */
   background-color: #111C33;
   color: white;
   margin-right: 1%;

@@ -32,6 +32,7 @@ import numpy as np
 import torch
 from Model_Implimentaion.test import validate_and_enhance_house_plan  # Import functions from file1
 from Model_Implimentaion.model_implement import main  # Import model from file2
+from Model_Implimentaion.Dplot import plot_3d_house_plan
 import os
 import bcrypt
 class UserList(ListAPIView):
@@ -60,7 +61,7 @@ from .models import User, Chat, ChatPrompt
 
 
 def get_image(request, image_name):
-    image_path = os.path.join(r"C:\Users\SMART TECH\Desktop\New folder (2)\Architexture-AI\BackendProject\images", image_name)
+    image_path = os.path.join(r"C:\Users\SMART TECH\Desktop\New folder (3)\Architexture-AI1\BackendProject\images", image_name)
     print(f"Attempting to load image from: {image_path}")  # Debugging
 
     if not os.path.exists(image_path):
@@ -72,7 +73,19 @@ def get_image(request, image_name):
             return HttpResponse(image_file.read(), content_type="image/png")
     except FileNotFoundError:
         return HttpResponse("Image not found", status=404)
+def get_image_3D(request, image_name):
+    image_path = os.path.join(r"C:\Users\SMART TECH\Desktop\New folder (3)\Architexture-AI1\BackendProject\3D_plot", image_name)
+    print(f"Attempting to load image from: {image_path}")  # Debugging
 
+    if not os.path.exists(image_path):
+        print("Image not found!")  # Debugging
+        return HttpResponse("Image not found", status=404)
+    
+    try:
+        with open(image_path, "rb") as image_file:
+            return HttpResponse(image_file.read(), content_type="image/png")
+    except FileNotFoundError:
+        return HttpResponse("Image not found", status=404)
 
 
 
@@ -106,7 +119,7 @@ class HousePlanAPI(APIView):
             if not validation_result["is_valid"]:
                 ChatPrompt.objects.create(
                     chat=chat, prompt_text=user_input, output_text=validation_result["reason"], 
-                    image_path=None, created_at=chat_created_at
+                    image_path=None,  design_path=None, created_at=chat_created_at
                 )
                 return Response({"error": validation_result["reason"]}, status=status.HTTP_400_BAD_REQUEST)
 
@@ -120,7 +133,7 @@ class HousePlanAPI(APIView):
             # Save in the database
             chat_prompt = ChatPrompt.objects.create(
                 chat=chat, prompt_text=user_input, output_text="Success", 
-                image_path=image_path, created_at=chat_created_at
+                image_path=image_path, design_path=None, created_at=chat_created_at
             )
 
             # Read image file and return in response
@@ -135,11 +148,70 @@ class HousePlanAPI(APIView):
             if 'chat' in locals():
                 ChatPrompt.objects.create(
                     chat=chat, prompt_text=user_input, output_text=error_message, 
-                    image_path=None, created_at=chat_created_at
+                    image_path=None,design_path=None, created_at=chat_created_at
                 )
             return Response({"error": error_message}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
+class HousePlanAPI1(APIView):
+    def post(self, request):
+        user_input = request.data.get("input")
+        prompt_id = request.data.get("promptId")
+        email = request.data.get("email")
 
+        # Check required fields
+        missing_fields = [field for field in ["input", "promptId", "email"] if not request.data.get(field)]
+        if missing_fields:
+            return Response({"error": f"Missing required fields: {', '.join(missing_fields)}"}, status=status.HTTP_400_BAD_REQUEST)
+
+        if not process_input(user_input):
+            return Response({"error": "I'm not able to write any code."}, status=status.HTTP_400_BAD_REQUEST)
+
+        try:
+            # Get user by email
+            user = User.objects.get(email=email)
+
+            # Get or create chat
+            chat, created = Chat.objects.get_or_create(
+                chat_id=prompt_id, user=user, defaults={"created_at": timezone.now()}
+            )
+            chat_created_at = chat.created_at if not created else timezone.now()
+
+            # Validate house plan
+            validation_result = validate_and_enhance_house_plan(user_input)
+            if not validation_result["is_valid"]:
+                ChatPrompt.objects.create(
+                    chat=chat, prompt_text=user_input, output_text=validation_result["reason"], 
+                    image_path=None, design_path=None, created_at=chat_created_at
+                )
+                return Response({"error": validation_result["reason"]}, status=status.HTTP_400_BAD_REQUEST)
+
+            # Generate an image and save it
+            # image_id = uuid.uuid4().hex  # Generate unique image ID
+            # image_folder = "C:\Users\SMART TECH\Documents\FYP\BackendProject\Images"
+            # os.makedirs(image_folder, exist_ok=True)  # Ensure directory exists
+            # image_path = os.path.join(image_folder, f"final_image_{image_id}.png")
+            image_path=main()  # Call main function with image path
+            Design_path= plot_3d_house_plan()
+            # Save in the database
+            chat_prompt = ChatPrompt.objects.create(
+                chat=chat, prompt_text=user_input, output_text="Success", 
+                image_path=Design_path, design_path=image_path, created_at=chat_created_at
+            )
+            # Read image file and return in response
+            with open(Design_path, "rb") as image_file:
+                return HttpResponse(image_file.read(), content_type="image/png")
+
+        except User.DoesNotExist:
+            return Response({"error": "User not found"}, status=status.HTTP_404_NOT_FOUND)
+
+        except Exception as e:
+            error_message = str(e)
+            if 'chat' in locals():
+                ChatPrompt.objects.create(
+                    chat=chat, prompt_text=user_input, output_text=error_message, 
+                    image_path=None, design_path=None, created_at=chat_created_at
+                )
+            return Response({"error": error_message}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
 
 class UserChatAPIView(APIView):

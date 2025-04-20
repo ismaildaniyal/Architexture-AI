@@ -28,5 +28,7 @@ def load_views():
         path("delete-chat/",views.DeleteUserChatAPIView.as_view()),
         path('delete-chat', views.DeleteUserChatAPIView.as_view()), 
         path("get-image/<str:image_name>/", views.get_image, name="get_image"),
+        path("get_image_3D/<str:image_name>/", views.get_image_3D, name="get_image_3D"),
+        path("3D-Design/", views.HousePlanAPI1.as_view()),
     ])
 load_views()

@@ -22,20 +22,21 @@ class UserAuth(models.Model):
         return timezone.now() < expiration_time
 # Create your models here.
 class User(models.Model):
-    username = models.CharField(max_length=45, null=False)  # Unique and not null
-    email = models.EmailField(primary_key=True, null=False)  # Email as the primary key
-    password = models.CharField(max_length=256, null=False)  # Not null
+    username = models.CharField(max_length=45, null=False) 
+    email = models.EmailField(primary_key=True, null=False)  
+    password = models.CharField(max_length=256, null=False)  
 
 
-# Chat model (api_chat)
 class Chat(models.Model):
-    chat_id = models.IntegerField(primary_key=True)  # Now acts as the primary key
-    user = models.ForeignKey(User, on_delete=models.CASCADE, to_field='email')  
+    chat_id = models.IntegerField()  
+    user = models.ForeignKey(User, on_delete=models.CASCADE, to_field='email')
+
     created_at = models.DateTimeField(auto_now_add=True)
 
     class Meta:
-        unique_together = ('chat_id', 'user')  # Ensures uniqueness
-        constraints = [models.UniqueConstraint(fields=['chat_id', 'user'], name='unique_chat')]
+        constraints = [
+            models.UniqueConstraint(fields=['chat_id', 'user'], name='unique_chat')  # Composite key (chat_id, email)
+        ]
 
     def __str__(self):
         return f"Chat {self.chat_id} by {self.user.email}"
@@ -48,9 +49,10 @@ class ChatPrompt(models.Model):
     id = models.AutoField(primary_key=True)
     prompt_text = models.TextField()
     output_text = models.TextField(blank=True, null=True)
-    image_path = models.CharField(max_length=255, blank=True, null=True)  # New field for image path
+    image_path = models.CharField(max_length=255, blank=True, null=True)
+    design_path = models.CharField(max_length=255, blank=True, null=True)
     created_at = models.DateTimeField(auto_now_add=True)
-    chat = models.ForeignKey(Chat, on_delete=models.CASCADE)  # Link to Chat model
+    chat = models.ForeignKey(Chat, on_delete=models.CASCADE)  # No "to_field" here
 
     def __str__(self):
         return f"Prompt {self.id} for Chat {self.chat.chat_id}"

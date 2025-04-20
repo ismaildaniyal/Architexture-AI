@@ -45,6 +45,11 @@ function HomePage() {
         link.click();
         document.body.removeChild(link);
     };
+
+
+
+
+    
     useEffect(() => {
         const fetchChatHistory = async () => {
             try {
@@ -64,42 +69,46 @@ function HomePage() {
                 const data = await response.json();
                 console.log("Fetched chat history:", data);
     
+                if (!data.all_chats || data.all_chats.length === 0) {
+                    // If no chats exist, show the welcome screen
+                    setShowWelcome(true);
+                    return;
+                }
+    
                 // Sort chats by created_at (Descending Order)
                 const sortedChats = data.all_chats.sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
     
                 // Initialize history object with chat IDs
-                
-                // Transform into expected format
-        const newHistory = {};
-        sortedChats.forEach(chat => {
-            newHistory[chat.chat_id] = [];
-        });
-
-    // Set history and active prompt
-setHistory(newHistory);
-setShowWelcome(false); // Hide the welcome screen
-
-// Set the latest chat ID
-const latestChatId = data.latest_chat.chat_id;
-setSelectedPromptId(latestChatId);
-
-
-setHistory((prevHistory) => ({
-    ...prevHistory,
-    [latestChatId]: data.latest_chat.prompts
-        .sort((a, b) => a.id - b.id) // Sort by ID in ascending order
-        .map((prompt) => {
-            const imageName = prompt.image_path ? prompt.image_path.split('\\').pop() : null;
-            console.log('Image name:', imageName);
-            return {
-                text: prompt.prompt_text,
-                output_text: prompt.output_text,
-                image: imageName ? `http://127.0.0.1:8000/api/get-image/${imageName}` : null, // Fetch from API
-                success: !!prompt.image_path, // Success if image path exists
-                message: prompt.image_path ? null : prompt.output_text || "No valid image available.",
-            };
-        }),
-}));
+                const newHistory = {};
+                sortedChats.forEach(chat => {
+                    newHistory[chat.chat_id] = [];
+                });
+    
+                // Set history and hide the welcome screen
+                setHistory(newHistory);
+                setShowWelcome(false);
+    
+                // Set the latest chat ID
+                const latestChatId = data.latest_chat.chat_id;
+                setSelectedPromptId(latestChatId);
+    
+                setHistory((prevHistory) => ({
+                    ...prevHistory,
+                    [latestChatId]: data.latest_chat.prompts
+                        .sort((a, b) => a.id - b.id) // Sort by ID in ascending order
+                        .map((prompt) => {
+                            const imageName = prompt.image_path ? prompt.image_path.split('\\').pop() : null;
+                            console.log('Image name:', imageName);
+                            return {
+                                text: prompt.prompt_text,
+                                output_text: prompt.output_text,
+                                image: imageName ? `http://127.0.0.1:8000/api/get-image/${imageName}` : null, // Fetch from API
+                                success: !!prompt.image_path, // Success if image path exists
+                                message: prompt.image_path ? null : prompt.output_text || "No valid image available.",
+                            };
+                        }),
+                }));
+    
             } catch (error) {
                 console.error("Error fetching chat history:", error);
             }
@@ -107,6 +116,7 @@ setHistory((prevHistory) => ({
     
         fetchChatHistory();
     }, []);
+    
     useEffect(() => {
         if (messagesEndRef.current) {
             messagesEndRef.current.scrollIntoView({ behavior: 'smooth' });
@@ -156,6 +166,7 @@ alert("You have been logged out.");
         if (input.trim()) {
             setLoading(true); // Start loading
             setShowWelcome(false); // Hide the welcome screen
+            const currentInput = input; 
             const newPrompt = { text: input, mode };
     
             // Add the input message with a loading state to history
@@ -229,7 +240,7 @@ alert("You have been logged out.");
                 setHistory((prevHistory) => ({
                     ...prevHistory,
                     [selectedPromptId]: prevHistory[selectedPromptId].map((prompt) =>
-                        prompt.text === input ? newResponse : prompt
+                        prompt.text === currentInput ? newResponse : prompt
                     ),
                 }));
             } catch (error) {
@@ -244,7 +255,7 @@ alert("You have been logged out.");
                 setHistory((prevHistory) => ({
                     ...prevHistory,
                     [selectedPromptId]: prevHistory[selectedPromptId].map((prompt) =>
-                        prompt.text === input ? newResponse : prompt
+                        prompt.text === currentInput ? newResponse : prompt
                     ),
                 }));
             } finally {
@@ -254,7 +265,107 @@ alert("You have been logged out.");
     };
     
     
+    const handleSendPrompt1 = async (mode) => {
+        if (input.trim()) {
+            setLoading(true); // Start loading
+            setShowWelcome(false); // Hide the welcome screen
+            const currentInput = input; // Capture current input
+
+            const newPrompt = { text: input, mode };
     
+            // Add the input message with a loading state to history
+            setHistory((prevHistory) => ({
+                ...prevHistory,
+                [selectedPromptId]: [...(prevHistory[selectedPromptId] || []), { ...newPrompt, loading: true }],
+            }));
+            setInput("");
+
+            try {
+                const userEmail = Cookies.get('email'); // Get email from cookie
+                // Debug logs
+                console.log('Sending request with data:', {
+                    input,
+                    email: userEmail,
+                    promptId: selectedPromptId,
+                });
+                
+                if (!userEmail) {
+                    throw new Error('User email not found. Please login again.');
+                }
+
+                if (!selectedPromptId) {
+                    throw new Error('No prompt ID selected.');
+                }
+
+                const requestData = {
+                    input: input,
+                    mode: mode,
+                    email: userEmail,
+                    promptId: selectedPromptId  // Changed from selectedPromptId to promptId
+                };
+                
+
+                console.log('Request body:', JSON.stringify(requestData));
+
+                const response = await fetch('http://127.0.0.1:8000/api/3D-Design/', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    credentials: 'include',  // Include cookies in the request
+                    body: JSON.stringify(requestData),
+                });
+            
+                let newResponse = {}; // To store the response
+    
+                if (response.ok) {
+                    // Convert response to Blob for image handling
+                const blob = await response.blob();
+                const imageUrl = URL.createObjectURL(blob);
+                console.log('Image received:', imageUrl);
+
+                newResponse = {
+                    image: imageUrl,
+                    success: true,
+                    text: input,
+                };
+                } else {
+                    const errorData = await response.json();
+                    console.error('Error response:', errorData);
+                    newResponse = {
+                        message: errorData.error || 'An error occurred.',
+                        success: false,
+                        text: input,
+                    };
+                }
+    
+                // Update history with the response
+                setHistory((prevHistory) => ({
+                    ...prevHistory,
+                    [selectedPromptId]: prevHistory[selectedPromptId].map((prompt) =>
+                        prompt.text === currentInput ? newResponse : prompt
+                    ),
+                }));
+            } catch (error) {
+                console.error('Request error:', error);
+                const newResponse = {
+                    message: error.message || 'An error occurred. Please try again.',
+                    success: false,
+                    text: input,
+                };
+    
+                // Update history with the error message
+                setHistory((prevHistory) => ({
+                    ...prevHistory,
+                    [selectedPromptId]: prevHistory[selectedPromptId].map((prompt) =>
+                        prompt.text === currentInput ? newResponse : prompt
+                    ),
+                }));
+            } finally {
+                setLoading(false); // Stop loading
+            }
+        }
+    };
     
     
     
@@ -282,8 +393,10 @@ alert("You have been logged out.");
         setSelectedPromptId(promptId);
         
         try {
+
+            const userEmail = Cookies.get('email');
             const response = await fetch(
-                `http://127.0.0.1:8000/api/retrive-data?email=ismailsarfraz9345@gmail.com&chat_id=${promptId}`
+                `http://127.0.0.1:8000/api/retrive-data?email=${userEmail}&chat_id=${promptId}`
             );
             const data = await response.json();
     
@@ -575,7 +688,7 @@ alert("You have been logged out.");
                                                     <div className="modal-content" onClick={(e) => e.stopPropagation()}>
                                                         <span className="close-btn" onClick={closeModal}>&times;</span>
                                                         <img src={selectedImage} alt="Full View" className="modal-image" />
-                                                        <button className="download-btn" onClick={downloadImage}>Download Image</button>
+                                                       
                                                     </div>
                                                 </div>
                                             )}
@@ -697,7 +810,7 @@ alert("You have been logged out.");
 <button className="mode-button"  onClick={() => handleSendPrompt("2D")} disabled={loading}>
     2D
 </button>
-<button className="mode-button"  disabled={loading}>
+<button className="mode-button"  onClick={()=> handleSendPrompt1("3D")} disabled={loading}>
     3D
 </button>
 
